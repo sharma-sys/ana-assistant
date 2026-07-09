@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ana-db
+    environment:
+      POSTGRES_USER: ana_user
+      POSTGRES_PASSWORD: ana_password
+      POSTGRES_DB: ana_production
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ana-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://ana_user:ana_password@db:5432/ana_production
+      - ANA_API_KEY=your-production-secret-key
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  scheduler:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ana-scheduler
+    command: ["python", "worker.py"]
+    environment:
+      - DATABASE_URL=postgresql://ana_user:ana_password@db:5432/ana_production
+      - ANA_API_KEY=your-production-secret-key
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - db
+      - backend
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ana-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
+      - NEXT_PUBLIC_API_KEY=your-production-secret-key
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:

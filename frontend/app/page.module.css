@@ -1,0 +1,525 @@
+.main {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  height: 60px;
+  background-color: var(--primary);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+  color: white;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoMark {
+  width: 32px;
+  height: 32px;
+  background-color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.logo h1 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  color: white;
+}
+
+.userProfile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.syncButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.syncButton:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: white;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  background-color: #10b981;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.container {
+  flex-grow: 1;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.layoutWrapper {
+  display: flex;
+  gap: 2rem;
+  align-items: stretch;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.tabsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tab {
+  background: transparent;
+  border: none;
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background-color: rgba(0,0,0,0.05);
+  color: var(--text-primary);
+}
+
+.tab.activeTab {
+  background-color: rgba(99, 102, 241, 0.1);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.mainContent {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.controlsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  background-color: var(--primary);
+  padding: 1rem;
+  border-radius: 12px;
+  border: none;
+  flex-shrink: 0;
+}
+
+.leftControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.rightControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1.5rem;
+}
+
+.homeButton {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-bottom: 2px;
+  transition: all 0.2s;
+}
+
+.homeButton:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+.filterSection {
+  display: flex;
+  gap: 1rem;
+}
+
+.searchSection {
+  width: 400px;
+}
+
+@media (max-width: 900px) {
+  .controlsContainer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .searchSection {
+    width: 100%;
+  }
+}
+
+
+.feedSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.feedHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-shrink: 0;
+}
+
+.feedHeader h2 {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.resultsCount {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.topSection {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 2rem;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.gridContainer {
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 10px;
+  min-height: 0;
+}
+
+.gridContainer::-webkit-scrollbar {
+  width: 4px;
+}
+.gridContainer::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.rightSidebar {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebarContent {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.sidebarContent::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebarContent::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.listContainer {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+.multiColumnWrapper {
+  margin-top: 3rem;
+  margin-bottom: 2rem;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.pramukhSamacharHeading {
+  font-size: 32px;
+  font-weight: 800;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333333;
+  border-bottom: 1px dotted var(--border);
+  padding-bottom: 15px;
+}
+
+.multiColumnContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+}
+
+.columnHeader {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-top: 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.columnList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.columnList li {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.pramukhContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.pramukhButtons {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+}
+
+.pramukhBtn {
+  background-color: #6366F1;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pramukhBtn:hover {
+  opacity: 0.9;
+}
+
+.pramukhBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.arrowIcon {
+  color: var(--text-secondary);
+  font-weight: bold;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.columnList a {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.4;
+  transition: color 0.2s;
+}
+
+.columnList a:hover {
+  color: var(--primary);
+}
+
+.viewMoreBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  margin-top: auto;
+  transition: color 0.2s;
+}
+
+.viewMoreBtn:hover {
+  color: var(--primary);
+}
+.listContainer::-webkit-scrollbar {
+  width: 4px;
+}
+.listContainer::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 1rem;
+  }
+  .logo h1 {
+    display: none;
+  }
+  .container {
+    padding: 1rem;
+    overflow: auto;
+  }
+  .layoutWrapper {
+    flex-direction: column;
+    gap: 1rem;
+    overflow: visible;
+  }
+  .sidebar {
+    width: 100%;
+    height: auto;
+    overflow-y: visible;
+    padding-right: 0;
+  }
+  .tabsContainer {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    gap: 8px;
+    scrollbar-width: none; /* Firefox */
+  }
+  .tabsContainer::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+  .tab {
+    white-space: nowrap;
+  }
+  .controlsContainer {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+  .leftControls, .rightControls {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .homeButton {
+    width: 100%;
+  }
+  .filterSection {
+    width: 100%;
+    flex-direction: column;
+  }
+  .searchSection {
+    width: 100%;
+  }
+  .mainContent {
+    overflow: visible;
+  }
+  .feedSection {
+    overflow: visible;
+  }
+  .topSection {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    overflow: visible;
+  }
+  .gridContainer {
+    overflow-y: visible;
+    padding-right: 0;
+  }
+  .rightSidebar {
+    height: auto;
+  }
+  .sidebarContent {
+    overflow-y: visible;
+    padding-right: 0;
+  }
+}
