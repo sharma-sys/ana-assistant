@@ -52,6 +52,7 @@ def get_news(
     page: int = 1,
     limit: int = 50,
     db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key)
 ):
     query = db.query(NewsArticle, NewsSource).join(
         NewsSource, NewsArticle.source_id == NewsSource.id
@@ -80,9 +81,15 @@ def get_news(
     # Map the tuple (NewsArticle, NewsSource) to our response schema
     items = []
     for article, source in db_items:
-        # Dynamically generate the fact check report
-        report = CredibilityEngine.generate_fact_check_report(article, source)
-        
+        score = article.credibility_score or 50
+        status = "Needs Verification"
+        if score >= 90:
+            status = "Highly Credible"
+        elif score >= 75:
+            status = "Credible"
+        elif score >= 50:
+            status = "Moderate"
+            
         items.append(
             NewsArticleResponse(
                 id=article.id,
@@ -98,8 +105,8 @@ def get_news(
                 language=article.language,
                 source_name=source.name,
                 references=article.references,
-                credibility_score=report["credibility_score"],
-                credibility_status=report["status"],
+                credibility_score=score,
+                credibility_status=status,
             )
         )
 

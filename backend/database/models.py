@@ -26,11 +26,11 @@ class NewsArticle(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String)
     source_url = Column(String, unique=True, index=True)
-    source_id = Column(Integer, ForeignKey("news_sources.id"))
+    source_id = Column(Integer, ForeignKey("news_sources.id"), index=True)
     state = Column(String, index=True)
     district = Column(String, index=True)
     category = Column(String, index=True, nullable=True)
-    published_at = Column(DateTime)
+    published_at = Column(DateTime, index=True)
     status = Column(String, default="pending")  # 'pending', 'processed', 'published'
     image_url = Column(String, nullable=True)
     language = Column(String, default="hi")

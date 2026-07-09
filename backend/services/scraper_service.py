@@ -5,6 +5,8 @@ import time
 import random
 import threading
 from urllib.parse import urlparse
+import socket
+import ipaddress
 
 logger = logging.getLogger(__name__)
 
@@ -40,11 +42,37 @@ def _enforce_rate_limit(url: str):
     except Exception as e:
         logger.error(f"Rate limiting error for {url}: {e}")
 
+def is_safe_url(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ["http", "https"]:
+            return False
+            
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+            
+        ip = socket.gethostbyname(hostname)
+        ip_obj = ipaddress.ip_address(ip)
+        
+        # Block private, loopback, multicast, etc.
+        if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_multicast:
+            return False
+            
+        return True
+    except Exception as e:
+        logger.error(f"URL validation error for {url}: {e}")
+        return False
+
 def extract_article_content(url: str) -> str:
     """
     Downloads and extracts the main text content from a given news article URL.
     Returns the extracted text or a fallback string on failure.
     """
+    if not is_safe_url(url):
+        logger.warning(f"SSRF attempt blocked for url: {url}")
+        return "Error: The provided URL is restricted for security reasons."
+
     _enforce_rate_limit(url)
     try:
         downloaded = trafilatura.fetch_url(url)

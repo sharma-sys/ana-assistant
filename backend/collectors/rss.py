@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from database.models import NewsArticle, NewsSource
 from sqlalchemy.orm import Session
+from utils.credibility import CredibilityEngine
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,12 @@ class GenericRssCollector:
 
         return image_url
 
-    def _process_entry(self, entry, source_id, source_state, source_district, department, source_category):
+    def _process_entry(self, entry, source):
+        source_id = source.id
+        source_state = source.state
+        source_district = source.district
+        department = source.department
+        source_category = source.category
         published_dt = datetime.utcnow()
         if hasattr(entry, "published_parsed") and entry.published_parsed:
             import time as parse_time
@@ -93,6 +99,10 @@ class GenericRssCollector:
             status="pending",
             image_url=image_url,
         )
+        
+        # Calculate credibility upfront
+        article.credibility_score = CredibilityEngine.calculate_score(article, source)
+        return article
 
     def parse_and_store(self, feed_xml: str, source: NewsSource) -> int:
         from collectors.deduplicator import Deduplicator
@@ -114,7 +124,7 @@ class GenericRssCollector:
         articles_to_add = []
         import concurrent.futures
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-            futures = [executor.submit(self._process_entry, entry, source.id, source.state, source.district, source.department, source.category) for entry in unique_entries]
+            futures = [executor.submit(self._process_entry, entry, source) for entry in unique_entries]
             for future in concurrent.futures.as_completed(futures):
                 result = future.result()
                 if result: articles_to_add.append(result)

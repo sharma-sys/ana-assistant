@@ -9,6 +9,7 @@ from services import ai_service, scraper_service
 import json
 import logging
 from api.auth import verify_api_key
+# pyrefly: ignore [missing-import]
 from fastapi.concurrency import run_in_threadpool
 
 logger = logging.getLogger(__name__)

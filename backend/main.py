@@ -8,10 +8,10 @@ from contextlib import asynccontextmanager
 from scheduler.jobs import scheduler
 import logging
 import sys
-# pyrefly: ignore [missing-import]
 from fastapi.responses import JSONResponse
 # pyrefly: ignore [missing-import]
 from fastapi import Request
+from fastapi.middleware.gzip import GZipMiddleware
 
 # Configure logging
 logging.basicConfig(
@@ -21,8 +21,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ana_backend")
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# Create database tables (Removed for production, use alembic)
+# Base.metadata.create_all(bind=engine)
 
 
 @asynccontextmanager
@@ -48,6 +48,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 @app.exception_handler(Exception)

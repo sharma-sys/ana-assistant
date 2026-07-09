@@ -11,8 +11,8 @@ logger = logging.getLogger("worker")
 
 if __name__ == "__main__":
     logger.info("Starting isolated scheduler worker...")
-    # Ensure tables exist
-    Base.metadata.create_all(bind=engine)
+    # Ensure tables exist (Removed for production, use alembic)
+    # Base.metadata.create_all(bind=engine)
     
     scheduler.start()
     

@@ -11,6 +11,7 @@ from collectors.district_news import DistrictNewsCollector
 from collectors.gov_news import GovernmentNewsCollector
 from collectors.police_news import PoliceNewsCollector
 from collectors.pib_news import PibNewsCollector
+from api.auth import verify_api_key
 
 router = APIRouter()
 
@@ -51,13 +52,13 @@ class HealthCheckResponse(BaseModel):
 
 # Endpoints
 @router.get("", response_model=List[SourceResponse])
-def get_sources(db: Session = Depends(get_db)):
+def get_sources(db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
     sources = db.query(NewsSource).all()
     return sources
 
 
 @router.post("", response_model=SourceResponse)
-def add_source(source: SourceCreate, db: Session = Depends(get_db)):
+def add_source(source: SourceCreate, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
     db_source = db.query(NewsSource).filter(NewsSource.url == source.url).first()
     if db_source:
         raise HTTPException(status_code=400, detail="Source URL already exists")
@@ -79,7 +80,7 @@ def add_source(source: SourceCreate, db: Session = Depends(get_db)):
 
 
 @router.delete("/{source_id}")
-def delete_source(source_id: int, db: Session = Depends(get_db)):
+def delete_source(source_id: int, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
     source = db.query(NewsSource).filter(NewsSource.id == source_id).first()
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
@@ -89,7 +90,7 @@ def delete_source(source_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{source_id}/enable")
-def enable_source(source_id: int, db: Session = Depends(get_db)):
+def enable_source(source_id: int, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
     source = db.query(NewsSource).filter(NewsSource.id == source_id).first()
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
@@ -99,7 +100,7 @@ def enable_source(source_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{source_id}/disable")
-def disable_source(source_id: int, db: Session = Depends(get_db)):
+def disable_source(source_id: int, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
     source = db.query(NewsSource).filter(NewsSource.id == source_id).first()
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
@@ -136,7 +137,7 @@ def check_url(source):
 
 
 @router.post("/health", response_model=List[HealthCheckResponse])
-def check_sources_health(db: Session = Depends(get_db)):
+def check_sources_health(db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
     active_sources = db.query(NewsSource).filter(NewsSource.is_active == True).all()
     results = []
 
@@ -149,7 +150,7 @@ def check_sources_health(db: Session = Depends(get_db)):
 
 
 @router.post("/{source_id}/retry")
-def retry_source(source_id: int, db: Session = Depends(get_db)):
+def retry_source(source_id: int, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
     source = db.query(NewsSource).filter(NewsSource.id == source_id).first()
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
