@@ -29,7 +29,12 @@ export async function fetchNews(
     const queryString = params.toString();
     const url = `${API_BASE_URL}/news/${queryString ? `?${queryString}` : ''}`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'X-API-Key': API_KEY,
+      },
+    });
+    
     if (!response.ok) {
       throw new Error(`Failed to fetch news: ${response.statusText}`);
     }
@@ -139,7 +144,11 @@ export async function triggerRSSFetch(): Promise<{ status: string, new_articles_
 export async function fetchActiveSources(): Promise<{id: number, name: string}[]> {
   try {
     const url = `${API_BASE_URL}/sources`;
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'X-API-Key': API_KEY,
+      }
+    });
     if (!response.ok) {
       throw new Error(`Failed to fetch sources: ${response.statusText}`);
     }
