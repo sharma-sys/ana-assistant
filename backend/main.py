@@ -46,7 +46,11 @@ def seed_db():
                 ("News18 MP", "rss_hindi", "https://hindi.news18.com/rss/khabar/madhya-pradesh/madhya-pradesh.xml", "Madhya Pradesh", 1, None, None, "Regional"),
                 ("Webdunia MP", "rss_hindi", "https://hindi.webdunia.com/rss/regional-madhya-pradesh.xml", "Madhya Pradesh", 1, None, None, "Regional"),
                 ("Patrika MP", "rss_hindi", "https://www.patrika.com/madhya-pradesh-news/rss.xml", "Madhya Pradesh", 1, None, None, "Regional"),
-                ("IBC24 MP", "rss_hindi", "https://www.ibc24.in/category/madhya-pradesh/feed", "Madhya Pradesh", 1, None, None, "Regional")
+                ("IBC24 MP", "rss_hindi", "https://www.ibc24.in/category/madhya-pradesh/feed", "Madhya Pradesh", 1, None, None, "Regional"),
+                ("MP Breaking News", "rss_hindi", "https://mpbreakingnews.in/feed/", "Madhya Pradesh", 1, None, None, "Regional"),
+                ("Khabar Satta", "rss_hindi", "https://khabarsatta.com/feed/", "Madhya Pradesh", 1, None, None, "Regional"),
+                ("Bhopal Samachar", "rss_hindi", "https://www.bhopalsamachar.com/feeds/posts/default?alt=rss", "Madhya Pradesh", 1, None, None, "Regional"),
+                ("Agniban", "rss_hindi", "https://www.agniban.com/feed/", "Madhya Pradesh", 1, None, None, "Regional")
             ]
             for src in new_sources:
                 ns = NewsSource(name=src[0], type=src[1], url=src[2], state=src[3], is_active=True, district=src[5], department=src[6], category=src[7])
