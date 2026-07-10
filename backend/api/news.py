@@ -270,7 +270,7 @@ def trigger_rss_fetch(
     try:
         from collectors.rss import GenericRssCollector
         from collectors.hindi_news import HindiNewsCollector
-        from collectors.gov_news import GovNewsCollector
+        from collectors.gov_news import GovernmentNewsCollector
         
         c1 = GenericRssCollector(db)
         r1 = c1.run()
@@ -278,7 +278,7 @@ def trigger_rss_fetch(
         c2 = HindiNewsCollector(db)
         r2 = c2.run()
         
-        c3 = GovNewsCollector(db)
+        c3 = GovernmentNewsCollector(db)
         r3 = c3.run()
         
         total_new = r1.get("new_articles_count", 0) + r2.get("new_articles_count", 0) + r3.get("new_articles_count", 0)
