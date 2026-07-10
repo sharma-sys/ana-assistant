@@ -64,6 +64,10 @@ export default function Dashboard() {
   useEffect(() => {
     let cancelled = false;
     setIsLoadingAll(true);
+    // Clear old data immediately so all sections go into loading state together
+    setArticles([]);
+    setTopGridArticles([]);
+    setGroupedNews({});
 
     const fetchAll = async () => {
       try {
@@ -277,7 +281,7 @@ export default function Dashboard() {
 
         <section className={styles.feedSection}>
           
-          {selectedSource === 'All' && topGridArticles.length > 0 && (
+          {selectedSource === 'All' && (topGridArticles.length > 0 || isLoadingAll) && (
             <div className={styles.topSection}>
               <div className={styles.gridContainer}>
                 <div className={styles.feedHeader}>
@@ -288,7 +292,7 @@ export default function Dashboard() {
                 </div>
                 <NewsFeed 
                   articles={topGridArticles} 
-                  isLoading={false} 
+                  isLoading={isLoadingAll} 
                   onGenerateAI={handleGenerateAI}
                   generatingId={generatingId}
                   layout="grid"
