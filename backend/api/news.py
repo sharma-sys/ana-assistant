@@ -1,5 +1,5 @@
 # pyrefly: ignore [missing-import]
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from database.session import get_db
 from database.models import NewsArticle, NewsSource
@@ -262,29 +262,34 @@ def get_pramukh_samachar(
 
 
 
-@router.post("/fetch")
-def trigger_rss_fetch(
-    db: Session = Depends(get_db), 
-    api_key: str = Depends(verify_api_key)
-):
+def run_rss_collectors(db: Session):
     try:
         from collectors.rss import GenericRssCollector
         from collectors.hindi_news import HindiNewsCollector
         from collectors.gov_news import GovernmentNewsCollector
         
         c1 = GenericRssCollector(db)
-        r1 = c1.run()
+        c1.run()
         
         c2 = HindiNewsCollector(db)
-        r2 = c2.run()
+        c2.run()
         
         c3 = GovernmentNewsCollector(db)
-        r3 = c3.run()
-        
-        total_new = r1.get("new_articles_count", 0) + r2.get("new_articles_count", 0) + r3.get("new_articles_count", 0)
-        total_skipped = r1.get("skipped_sources", 0) + r2.get("skipped_sources", 0) + r3.get("skipped_sources", 0)
-        
-        return {"status": "success", "new_articles_count": total_new, "skipped_sources": total_skipped}
+        c3.run()
+    except Exception as e:
+        import logging
+        logging.error(f"Error fetching RSS feeds: {str(e)}", exc_info=True)
+
+
+@router.post("/fetch")
+def trigger_rss_fetch(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db), 
+    api_key: str = Depends(verify_api_key)
+):
+    try:
+        background_tasks.add_task(run_rss_collectors, db)
+        return {"status": "success", "new_articles_count": "all"}
     except Exception as e:
         import logging
         logging.error(f"Error fetching RSS feeds: {str(e)}", exc_info=True)
