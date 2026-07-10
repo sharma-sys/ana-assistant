@@ -268,9 +268,23 @@ def trigger_rss_fetch(
     api_key: str = Depends(verify_api_key)
 ):
     try:
-        collector = GenericRssCollector(db)
-        result = collector.run()
-        return result
+        from collectors.rss import GenericRssCollector
+        from collectors.hindi_news import HindiNewsCollector
+        from collectors.gov_news import GovNewsCollector
+        
+        c1 = GenericRssCollector(db)
+        r1 = c1.run()
+        
+        c2 = HindiNewsCollector(db)
+        r2 = c2.run()
+        
+        c3 = GovNewsCollector(db)
+        r3 = c3.run()
+        
+        total_new = r1.get("new_articles_count", 0) + r2.get("new_articles_count", 0) + r3.get("new_articles_count", 0)
+        total_skipped = r1.get("skipped_sources", 0) + r2.get("skipped_sources", 0) + r3.get("skipped_sources", 0)
+        
+        return {"status": "success", "new_articles_count": total_new, "skipped_sources": total_skipped}
     except Exception as e:
         import logging
         logging.error(f"Error fetching RSS feeds: {str(e)}", exc_info=True)
