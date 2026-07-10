@@ -22,7 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger("ana_backend")
 
 # Create database tables (Removed for production, use alembic)
-# Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 
 @asynccontextmanager
