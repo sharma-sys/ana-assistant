@@ -1,7 +1,7 @@
 import { NewsArticle, AIResult } from '../types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY || '';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ana-assistant.onrender.com/api';
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'ana_secure_dev_key_2026';
 
 /**
  * Fetch news articles from the FastAPI backend.
