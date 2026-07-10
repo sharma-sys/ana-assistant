@@ -32,16 +32,21 @@ def seed_db():
         if count == 0:
             logger.info("Seeding database with default news sources...")
             new_sources = [
-                ("Zee News Hindi", "rss_hindi", "https://zeenews.india.com/hindi/india/rss", "All", 1, None, None, "National"),
+                ("NDTV Hindi", "rss_hindi", "https://feeds.feedburner.com/ndtvkhabar-latest", "All", 1, None, None, "National"),
                 ("News18 Hindi", "rss_hindi", "https://hindi.news18.com/rss/khabar/nation/nation.xml", "All", 1, None, None, "National"),
-                ("Haribhoomi", "rss_hindi", "https://www.haribhoomi.com/rss/india", "All", 1, None, None, "National"),
+                ("BBC Hindi", "rss_hindi", "https://feeds.bbci.co.uk/hindi/rss.xml", "All", 1, None, None, "National"),
                 ("Patrika", "rss_hindi", "https://www.patrika.com/rss.xml", "All", 1, None, None, "National"),
                 ("Amar Ujala", "rss_hindi", "https://www.amarujala.com/rss/india-news.xml", "All", 1, None, None, "National"),
                 ("Hindustan Times", "rss", "https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml", "All", 1, None, None, "National"),
                 ("Indian Express", "rss", "https://indianexpress.com/section/india/feed/", "All", 1, None, None, "National"),
-                ("India Today", "rss", "https://www.indiatoday.in/rss/1206584", "All", 1, None, None, "National"),
-                ("DD News", "rss", "https://ddnews.gov.in/rss", "All", 1, None, None, "National"),
-                ("ANI", "rss", "https://www.aninews.in/rss/feed/category/national/", "All", 1, None, None, "National")
+                ("Times of India", "rss", "https://timesofindia.indiatimes.com/rssfeedstopstories.cms", "All", 1, None, None, "National"),
+                ("PIB India", "rss", "https://pib.gov.in/newsite/rssenglish.aspx", "All", 1, None, None, "National"),
+                ("The Hindu", "rss", "https://www.thehindu.com/news/national/feeder/default.rss", "All", 1, None, None, "National"),
+                ("Lalluram", "rss_hindi", "https://lalluram.com/feed/", "Madhya Pradesh", 1, None, None, "Regional"),
+                ("News18 MP", "rss_hindi", "https://hindi.news18.com/rss/khabar/madhya-pradesh/madhya-pradesh.xml", "Madhya Pradesh", 1, None, None, "Regional"),
+                ("Webdunia MP", "rss_hindi", "https://hindi.webdunia.com/rss/regional-madhya-pradesh.xml", "Madhya Pradesh", 1, None, None, "Regional"),
+                ("Patrika MP", "rss_hindi", "https://www.patrika.com/madhya-pradesh-news/rss.xml", "Madhya Pradesh", 1, None, None, "Regional"),
+                ("IBC24 MP", "rss_hindi", "https://www.ibc24.in/category/madhya-pradesh/feed", "Madhya Pradesh", 1, None, None, "Regional")
             ]
             for src in new_sources:
                 ns = NewsSource(name=src[0], type=src[1], url=src[2], state=src[3], is_active=True, district=src[5], department=src[6], category=src[7])
