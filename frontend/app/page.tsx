@@ -21,11 +21,10 @@ export default function Dashboard() {
   const [selectedSource, setSelectedSource] = useState('All');
   
   const [articles, setArticles] = useState<NewsArticle[]>([]);
-  const [isLoadingNews, setIsLoadingNews] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  
+
   const [generatingId, setGeneratingId] = useState<string | number | null>(null);
   const [aiResult, setAiResult] = useState<AIResult | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -34,7 +33,7 @@ export default function Dashboard() {
   const [topGridArticles, setTopGridArticles] = useState<NewsArticle[]>([]);
   const [groupedNews, setGroupedNews] = useState<Record<string, NewsArticle[]>>({});
 
-  const categories = ['All', 'National', 'International', 'Sports', 'General'];
+  const categories = ['All', 'National', 'Regional', 'International', 'Sports', 'General'];
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isHoveredRef = useRef(false);
@@ -59,50 +58,55 @@ export default function Dashboard() {
     return () => clearTimeout(handler);
   }, [search]);
 
-  const { data: topGridData } = useSWR(
-    selectedSource === 'All' ? ['topGrid', debouncedSearch, selectedState, selectedCity, selectedCategory] : null,
-    ([_, s, st, c, cat]) => fetchTopGridNews(s as string, st as string, c as string, cat as string),
-    { refreshInterval: 120000 }
-  );
-
-  const { data: pramukhData } = useSWR(
-    selectedSource === 'All' ? ['pramukh', debouncedSearch, selectedState, selectedCity, selectedCategory] : null,
-    ([_, s, st, c, cat]) => fetchPramukhSamachar(s as string, st as string, c as string, cat as string),
-    { refreshInterval: 120000 }
-  );
+  // Fetch all sections simultaneously so they refresh together
+  const [isLoadingAll, setIsLoadingAll] = useState(true);
 
   useEffect(() => {
-    if (topGridData) setTopGridArticles(topGridData);
-    if (pramukhData && topGridData) {
-      const topIds = new Set(topGridData.map(a => a.id));
-      const filteredPramukh: Record<string, NewsArticle[]> = {};
-      Object.keys(pramukhData).forEach(source => {
-        const uniqueArts = pramukhData[source].filter(a => !topIds.has(a.id)).slice(0, 5);
-        if (uniqueArts.length > 0) {
-          filteredPramukh[source] = uniqueArts;
+    let cancelled = false;
+    setIsLoadingAll(true);
+
+    const fetchAll = async () => {
+      try {
+        const promises: Promise<unknown>[] = [
+          fetchNews(debouncedSearch, selectedState, selectedCity, selectedCategory, selectedSource, 1),
+        ];
+        if (selectedSource === 'All') {
+          promises.push(
+            fetchTopGridNews(debouncedSearch, selectedState, selectedCity, selectedCategory),
+            fetchPramukhSamachar(debouncedSearch, selectedState, selectedCity, selectedCategory)
+          );
         }
-      });
-      setGroupedNews(filteredPramukh);
-    }
-  }, [topGridData, pramukhData]);
+        const results = await Promise.all(promises);
+        if (cancelled) return;
 
-  const { data: newsData, isValidating: isNewsValidating } = useSWR(
-    ['news', debouncedSearch, selectedState, selectedCity, selectedCategory, selectedSource],
-    ([_, s, st, c, cat, src]) => fetchNews(s as string, st as string, c as string, cat as string, src as string, 1),
-    { refreshInterval: 120000 }
-  );
+        const newsResult = results[0] as { articles: NewsArticle[], totalPages: number };
+        setArticles(newsResult.articles);
+        setTotalPages(newsResult.totalPages);
+        setPage(1);
 
-  useEffect(() => {
-    if (newsData) {
-      setArticles(newsData.articles);
-      setTotalPages(newsData.totalPages);
-      setPage(1);
-    }
-  }, [newsData]);
+        if (selectedSource === 'All' && results.length === 3) {
+          const topGrid = results[1] as NewsArticle[];
+          const pramukh = results[2] as Record<string, NewsArticle[]>;
+          setTopGridArticles(topGrid);
+          const topIds = new Set(topGrid.map(a => a.id));
+          const filteredPramukh: Record<string, NewsArticle[]> = {};
+          Object.keys(pramukh).forEach(source => {
+            const uniqueArts = pramukh[source].filter(a => !topIds.has(a.id)).slice(0, 5);
+            if (uniqueArts.length > 0) filteredPramukh[source] = uniqueArts;
+          });
+          setGroupedNews(filteredPramukh);
+        }
+      } catch (error) {
+        console.error('Failed to fetch news:', error);
+      } finally {
+        if (!cancelled) setIsLoadingAll(false);
+      }
+    };
 
-  useEffect(() => {
-    setIsLoadingNews(newsData === undefined && isNewsValidating);
-  }, [newsData, isNewsValidating]);
+    fetchAll();
+    return () => { cancelled = true; };
+  }, [debouncedSearch, selectedState, selectedCity, selectedCategory, selectedSource]);
+
 
   useEffect(() => {
     let animationFrameId: number;
@@ -279,7 +283,7 @@ export default function Dashboard() {
                 <div className={styles.feedHeader}>
                   <h2>{selectedSource === 'All' ? 'Latest News' : `${selectedSource} News`}</h2>
                   <span className={styles.resultsCount}>
-                    {!isLoadingNews && `${articles.length} results found`}
+                    {!isLoadingAll && `${articles.length} results found`}
                   </span>
                 </div>
                 <NewsFeed 
@@ -349,13 +353,13 @@ export default function Dashboard() {
                 <div className={styles.sidebarContent} ref={sidebarRef}>
                   <NewsFeed 
                   articles={articles} 
-                  isLoading={isLoadingNews} 
+                  isLoading={isLoadingAll} 
                   onGenerateAI={handleGenerateAI}
                   generatingId={generatingId}
                   layout="sidebar"
                 />
                 
-                {page < totalPages && !isLoadingNews && (
+                {page < totalPages && !isLoadingAll && (
                   <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px', marginBottom: '24px' }}>
                     <button 
                       onClick={handleLoadMore} 
@@ -385,18 +389,18 @@ export default function Dashboard() {
               <div className={styles.feedHeader}>
                 <h2>{selectedSource} News</h2>
                 <span className={styles.resultsCount}>
-                  {!isLoadingNews && `${articles.length} results found`}
+                  {!isLoadingAll && `${articles.length} results found`}
                 </span>
               </div>
               <NewsFeed 
                 articles={articles} 
-                isLoading={isLoadingNews} 
+                isLoading={isLoadingAll} 
                 onGenerateAI={handleGenerateAI}
                 generatingId={generatingId}
                 layout="grid"
               />
               
-              {page < totalPages && !isLoadingNews && (
+              {page < totalPages && !isLoadingAll && (
                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px', marginBottom: '24px' }}>
                   <button 
                     onClick={handleLoadMore} 
