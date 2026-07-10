@@ -9,9 +9,12 @@ from contextlib import asynccontextmanager
 from scheduler.jobs import scheduler
 import logging
 import sys
+import os
+# pyrefly: ignore [missing-import]
 from fastapi.responses import JSONResponse
 # pyrefly: ignore [missing-import]
 from fastapi import Request
+# pyrefly: ignore [missing-import]
 from fastapi.middleware.gzip import GZipMiddleware
 
 # Configure logging
@@ -77,17 +80,12 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down ANA Backend")
 
 
-import os
-
 app = FastAPI(title="ANA Backend", version="1.0.0", lifespan=lifespan)
-
-allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
-allowed_origins = [origin.strip() for origin in allowed_origins_str.split(",") if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
