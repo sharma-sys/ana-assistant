@@ -47,7 +47,16 @@ def seed_db():
                 ("MP Breaking News", "rss_hindi", "https://mpbreakingnews.in/feed/", "Madhya Pradesh", 1, None, None, "Regional"),
                 ("Khabar Satta", "rss_hindi", "https://khabarsatta.com/feed/", "Madhya Pradesh", 1, None, None, "Regional"),
                 ("Bhopal Samachar", "rss_hindi", "https://www.bhopalsamachar.com/feeds/posts/default?alt=rss", "Madhya Pradesh", 1, None, None, "Regional"),
-                ("Agniban", "rss_hindi", "https://www.agniban.com/feed/", "Madhya Pradesh", 1, None, None, "Regional")
+                ("Agniban", "rss_hindi", "https://www.agniban.com/feed/", "Madhya Pradesh", 1, None, None, "Regional"),
+                # Sports
+                ("ESPN Cricinfo", "rss", "https://www.espncricinfo.com/rss/content/story/feeds/0.xml", "All", 1, None, None, "Sports"),
+                ("BBC Sport", "rss", "https://feeds.bbci.co.uk/sport/rss.xml", "All", 1, None, None, "Sports"),
+                ("Amar Ujala Sports", "rss_hindi", "https://www.amarujala.com/rss/sports.xml", "All", 1, None, None, "Sports"),
+                ("News18 Sports", "rss_hindi", "https://hindi.news18.com/rss/khabar/sports/sports.xml", "All", 1, None, None, "Sports"),
+                # International
+                ("BBC World News", "rss", "https://feeds.bbci.co.uk/news/world/rss.xml", "All", 1, None, None, "International"),
+                ("BBC Hindi International", "rss_hindi", "https://feeds.bbci.co.uk/hindi/international/rss.xml", "All", 1, None, None, "International"),
+                ("Al Jazeera English", "rss", "https://www.aljazeera.com/xml/rss/all.xml", "All", 1, None, None, "International"),
             ]
             for src in new_sources:
                 ns = NewsSource(name=src[0], type=src[1], url=src[2], state=src[3], is_active=True, district=src[5], department=src[6], category=src[7])
