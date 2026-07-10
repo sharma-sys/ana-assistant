@@ -2,7 +2,8 @@
 from fastapi import FastAPI
 # pyrefly: ignore [missing-import]
 from fastapi.middleware.cors import CORSMiddleware
-from database.session import engine, Base
+from database.session import engine, Base, SessionLocal
+from database.models import NewsSource
 from api import news, ai, sources
 from contextlib import asynccontextmanager
 from scheduler.jobs import scheduler
@@ -24,11 +25,38 @@ logger = logging.getLogger("ana_backend")
 # Create database tables (Removed for production, use alembic)
 Base.metadata.create_all(bind=engine)
 
+def seed_db():
+    db = SessionLocal()
+    try:
+        count = db.query(NewsSource).count()
+        if count == 0:
+            logger.info("Seeding database with default news sources...")
+            new_sources = [
+                ("Zee News Hindi", "rss_hindi", "https://zeenews.india.com/hindi/india/rss", "All", 1, None, None, "National"),
+                ("News18 Hindi", "rss_hindi", "https://hindi.news18.com/rss/khabar/nation/nation.xml", "All", 1, None, None, "National"),
+                ("Haribhoomi", "rss_hindi", "https://www.haribhoomi.com/rss/india", "All", 1, None, None, "National"),
+                ("Patrika", "rss_hindi", "https://www.patrika.com/rss.xml", "All", 1, None, None, "National"),
+                ("Amar Ujala", "rss_hindi", "https://www.amarujala.com/rss/india-news.xml", "All", 1, None, None, "National"),
+                ("Hindustan Times", "rss", "https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml", "All", 1, None, None, "National"),
+                ("Indian Express", "rss", "https://indianexpress.com/section/india/feed/", "All", 1, None, None, "National"),
+                ("India Today", "rss", "https://www.indiatoday.in/rss/1206584", "All", 1, None, None, "National"),
+                ("DD News", "rss", "https://ddnews.gov.in/rss", "All", 1, None, None, "National"),
+                ("ANI", "rss", "https://www.aninews.in/rss/feed/category/national/", "All", 1, None, None, "National")
+            ]
+            for src in new_sources:
+                ns = NewsSource(name=src[0], type=src[1], url=src[2], state=src[3], is_active=True, district=src[5], department=src[6], category=src[7])
+                db.add(ns)
+            db.commit()
+    except Exception as e:
+        logger.error(f"Failed to seed db: {e}")
+    finally:
+        db.close()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup event
     logger.info("Starting up ANA Backend (Scheduler now runs in worker.py)")
+    seed_db()
     yield
     # Shutdown event
     logger.info("Shutting down ANA Backend")
