@@ -1,10 +1,13 @@
+# pyrefly: ignore [missing-import]
 import cloudscraper
+# pyrefly: ignore [missing-import]
 import feedparser
 import logging
 import time
 import random
 import re
 import concurrent.futures
+# pyrefly: ignore [missing-import]
 from bs4 import BeautifulSoup
 from datetime import datetime
 from database.models import NewsArticle, NewsSource

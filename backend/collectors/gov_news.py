@@ -1,16 +1,20 @@
+# pyrefly: ignore [missing-import]
 import cloudscraper
+# pyrefly: ignore [missing-import]
 import feedparser
 import logging
 import time
 import random
 import re
 import concurrent.futures
+# pyrefly: ignore [missing-import]
 from bs4 import BeautifulSoup
 from datetime import datetime
 from database.models import NewsArticle, NewsSource
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
+
 
 class GovernmentNewsCollector:
     def __init__(self, db: Session):
@@ -36,18 +40,22 @@ class GovernmentNewsCollector:
     def extract_image(self, entry) -> str | None:
         image_url = None
 
+        # 1. Check media_content
         if hasattr(entry, "media_content") and len(entry.media_content) > 0:
             image_url = entry.media_content[0].get("url")
+        # 2. Check links array
         elif hasattr(entry, "links"):
             for link in entry.links:
                 if "image" in link.get("type", ""):
                     image_url = link.get("href")
                     break
+        # 3. Check regex in description
         if not image_url and hasattr(entry, "description"):
             match = re.search(r'img.*?src="([^"]+)"', entry.description)
             if match:
                 image_url = match.group(1)
 
+        # 4. Fallback: scrape og:image
         if not image_url and hasattr(entry, "link"):
             try:
                 res = self.scraper.get(entry.link, timeout=3)
@@ -60,23 +68,40 @@ class GovernmentNewsCollector:
                 pass
 
         if not image_url:
-            keywords = ["india", "government", "parliament", "flag", "ministry", "policy"]
-            image_url = f"https://source.unsplash.com/800x600/?{random.choice(keywords)}"
+            keywords = [
+                "india",
+                "government",
+                "parliament",
+                "flag",
+                "ministry",
+                "policy",
+            ]
+            image_url = (
+                f"https://source.unsplash.com/800x600/?{random.choice(keywords)}"
+            )
 
         return image_url
 
-    def _process_entry(self, entry, source_id, source_state, department, source_category):
+    def _process_entry(
+        self, entry, source_id, source_state, department, source_category
+    ):
+        # Parse Date
         published_dt = datetime.utcnow()
         if hasattr(entry, "published_parsed") and entry.published_parsed:
             import time as parse_time
-            published_dt = datetime.fromtimestamp(parse_time.mktime(entry.published_parsed))
+
+            published_dt = datetime.fromtimestamp(
+                parse_time.mktime(entry.published_parsed)
+            )
         elif hasattr(entry, "published"):
             from dateutil import parser
+
             try:
                 published_dt = parser.parse(entry.published).replace(tzinfo=None)
             except:
                 pass
 
+        # PIB rarely provides easy image enclosures in RSS, mostly just text.
         image_url = None
         if "media_content" in entry and len(entry.media_content) > 0:
             image_url = entry.media_content[0].get("url")
@@ -96,28 +121,49 @@ class GovernmentNewsCollector:
 
     def parse_and_store(self, feed_xml: str, source: NewsSource) -> int:
         from collectors.deduplicator import Deduplicator
+
         feed = feedparser.parse(feed_xml)
         new_count = 0
-        if not feed.entries: return 0
+
+        if not feed.entries:
+            return 0
 
         deduplicator = Deduplicator(self.db)
+
         unique_entries = []
         for entry in feed.entries:
-            if not hasattr(entry, "link"): continue
+            if not hasattr(entry, "link"):
+                continue
             title = entry.get("title", "")
             link = entry.link
-            if deduplicator.is_duplicate(title, link): continue
+
+            if deduplicator.is_duplicate(title, link):
+                continue
+
             unique_entries.append(entry)
 
-        if not unique_entries: return 0
+        if not unique_entries:
+            return 0
+
+        import concurrent.futures
 
         articles_to_add = []
-        import concurrent.futures
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-            futures = [executor.submit(self._process_entry, entry, source.id, source.state, source.department, source.category) for entry in unique_entries]
+            futures = [
+                executor.submit(
+                    self._process_entry,
+                    entry,
+                    source.id,
+                    source.state,
+                    source.department,
+                    source.category,
+                )
+                for entry in unique_entries
+            ]
             for future in concurrent.futures.as_completed(futures):
                 result = future.result()
-                if result: articles_to_add.append(result)
+                if result:
+                    articles_to_add.append(result)
 
         if articles_to_add:
             for article in articles_to_add:
@@ -134,7 +180,13 @@ class GovernmentNewsCollector:
 
     def run(self) -> dict:
         logger.info("Starting Government News Collector run...")
-        sources_to_process = self.db.query(NewsSource).filter(NewsSource.type == "rss_gov", NewsSource.is_active == True).all()
+
+        sources_to_process = (
+            self.db.query(NewsSource)
+            .filter(NewsSource.type == "rss_gov", NewsSource.is_active == True)
+            .all()
+        )
+
         total_new_articles = 0
         skipped_sources = 0
 
@@ -144,9 +196,15 @@ class GovernmentNewsCollector:
             if feed_xml:
                 new_articles = self.parse_and_store(feed_xml, source)
                 total_new_articles += new_articles
-                logger.info(f"Successfully processed {source.name}. New articles: {new_articles}")
+                logger.info(
+                    f"Successfully processed {source.name}. New articles: {new_articles}"
+                )
             else:
                 logger.warning(f"Skipping {source.name} due to fetch failure.")
                 skipped_sources += 1
 
-        return {"status": "success", "new_articles_count": total_new_articles, "skipped_sources": skipped_sources}
+        return {
+            "status": "success",
+            "new_articles_count": total_new_articles,
+            "skipped_sources": skipped_sources,
+        }
