@@ -62,7 +62,7 @@ export default function StateCityFilters({
       </div>
       
       <div className={styles.filterGroup}>
-        <label className={styles.label}>City</label>
+        <label className={styles.label}>District</label>
         <div className={styles.selectWrapper}>
           <select 
             className={styles.select} 

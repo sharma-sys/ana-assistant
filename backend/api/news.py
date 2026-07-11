@@ -267,6 +267,7 @@ def run_rss_collectors(db: Session):
         from collectors.rss import GenericRssCollector
         from collectors.hindi_news import HindiNewsCollector
         from collectors.gov_news import GovernmentNewsCollector
+        from collectors.district_news import DistrictNewsCollector
         
         c1 = GenericRssCollector(db)
         c1.run()
@@ -276,6 +277,9 @@ def run_rss_collectors(db: Session):
         
         c3 = GovernmentNewsCollector(db)
         c3.run()
+
+        c4 = DistrictNewsCollector(db)
+        c4.run()
     except Exception as e:
         import logging
         logging.error(f"Error fetching RSS feeds: {str(e)}", exc_info=True)

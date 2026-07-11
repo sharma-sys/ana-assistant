@@ -6,8 +6,7 @@ import StateCityFilters from '../components/StateCityFilters';
 import NewsFeed from '../components/NewsFeed';
 import AIPanel from '../components/AIPanel';
 import Toast from '../components/Toast';
-import { states, cities } from '../services/mockData';
-import { fetchNews, generateAIContent, triggerRSSFetch, fetchActiveSources, fetchTopGridNews, fetchPramukhSamachar } from '../services/api';
+import { fetchNews, generateAIContent, triggerRSSFetch, fetchActiveSources, fetchTopGridNews, fetchPramukhSamachar, fetchFilters } from '../services/api';
 import { NewsArticle, AIResult } from '../types';
 import styles from './page.module.css';
 import Image from 'next/image';
@@ -33,6 +32,10 @@ export default function Dashboard() {
   const [topGridArticles, setTopGridArticles] = useState<NewsArticle[]>([]);
   const [groupedNews, setGroupedNews] = useState<Record<string, NewsArticle[]>>({});
 
+  // Real states & districts from backend (replaces static mockData)
+  const [states, setStates] = useState<string[]>(['All']);
+  const [cities, setCities] = useState<Record<string, string[]>>({ All: ['All'] });
+
   const categories = ['All', 'National', 'Regional', 'International', 'Sports', 'General'];
 
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -40,6 +43,15 @@ export default function Dashboard() {
 
   const { data: activeChannelsData } = useSWR('activeSources', fetchActiveSources);
   useEffect(() => { if (activeChannelsData) setActiveChannels(activeChannelsData); }, [activeChannelsData]);
+
+  // Fetch real states & districts from backend on mount
+  const { data: filtersData } = useSWR('sourceFilters', fetchFilters);
+  useEffect(() => {
+    if (filtersData) {
+      setStates(filtersData.states);
+      setCities(filtersData.districts);
+    }
+  }, [filtersData]);
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -54,7 +66,7 @@ export default function Dashboard() {
 
   const [debouncedSearch, setDebouncedSearch] = useState('');
   useEffect(() => {
-    const handler = setTimeout(() => { setDebouncedSearch(search); }, 500);
+    const handler = setTimeout(() => { setDebouncedSearch(search); }, 300);
     return () => clearTimeout(handler);
   }, [search]);
 
@@ -71,13 +83,15 @@ export default function Dashboard() {
 
     const fetchAll = async () => {
       try {
+        // Use selectedCity for district filtering (district_news collector populates this field)
+        const effectiveCity = selectedCity;
         const promises: Promise<unknown>[] = [
-          fetchNews(debouncedSearch, selectedState, selectedCity, selectedCategory, selectedSource, 1),
+          fetchNews(debouncedSearch, selectedState, effectiveCity, selectedCategory, selectedSource, 1),
         ];
         if (selectedSource === 'All') {
           promises.push(
-            fetchTopGridNews(debouncedSearch, selectedState, selectedCity, selectedCategory),
-            fetchPramukhSamachar(debouncedSearch, selectedState, selectedCity, selectedCategory)
+            fetchTopGridNews(debouncedSearch, selectedState, effectiveCity, selectedCategory),
+            fetchPramukhSamachar(debouncedSearch, selectedState, effectiveCity, selectedCategory)
           );
         }
         const results = await Promise.all(promises);

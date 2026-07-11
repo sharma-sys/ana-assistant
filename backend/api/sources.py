@@ -57,6 +57,43 @@ def get_sources(db: Session = Depends(get_db), api_key: str = Depends(verify_api
     return sources
 
 
+@router.get("/filters")
+def get_filters(db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
+    """
+    Returns all unique states and their districts from active news sources.
+    Used by the frontend to dynamically populate State/District dropdowns.
+    """
+    sources = db.query(NewsSource).filter(NewsSource.is_active == True).all()
+
+    states_set = set()
+    districts_by_state: dict = {}
+
+    for source in sources:
+        state = source.state
+        district = source.district
+
+        if not state or state in ("All", "National"):
+            continue
+
+        states_set.add(state)
+        if state not in districts_by_state:
+            districts_by_state[state] = set()
+        if district and district not in ("All", ""):
+            districts_by_state[state].add(district)
+
+    result = {
+        "states": ["All"] + sorted(states_set),
+        "districts": {
+            "All": ["All"],
+            **{
+                state: ["All"] + sorted(districts)
+                for state, districts in sorted(districts_by_state.items())
+            },
+        },
+    }
+    return result
+
+
 @router.post("", response_model=SourceResponse)
 def add_source(source: SourceCreate, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)):
     db_source = db.query(NewsSource).filter(NewsSource.url == source.url).first()

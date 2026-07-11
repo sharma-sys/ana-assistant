@@ -1,11 +1,18 @@
 export const states = [
   "All",
-  "Madhya Pradesh"
+  "Bihar",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Rajasthan",
+  "Uttar Pradesh",
 ];
 
 export const cities: Record<string, string[]> = {
-  "All": [
-    "All"
+  "All": ["All"],
+  "Bihar": [
+    "All",
+    "Muzaffarpur",
+    "Patna",
   ],
   "Madhya Pradesh": [
     "All",
@@ -59,6 +66,22 @@ export const cities: Record<string, string[]> = {
     "Tikamgarh",
     "Ujjain",
     "Umaria",
-    "Vidisha"
-  ]
+    "Vidisha",
+  ],
+  "Maharashtra": [
+    "All",
+    "Mumbai",
+  ],
+  "Rajasthan": [
+    "All",
+    "Jaipur",
+    "Jodhpur",
+  ],
+  "Uttar Pradesh": [
+    "All",
+    "Agra",
+    "Kanpur",
+    "Lucknow",
+    "Varanasi",
+  ],
 };

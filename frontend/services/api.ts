@@ -162,6 +162,27 @@ export async function fetchActiveSources(): Promise<{id: number, name: string}[]
 }
 
 /**
+ * Fetch real states and districts from active news sources in the DB.
+ * Replaces the static mockData.
+ */
+export async function fetchFilters(): Promise<{ states: string[], districts: Record<string, string[]> }> {
+  try {
+    const url = `${API_BASE_URL}/sources/filters`;
+    const response = await fetch(url, {
+      headers: { 'X-API-Key': API_KEY },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch filters: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("API Error (fetchFilters):", error);
+    // Fallback: at least show All
+    return { states: ['All'], districts: { All: ['All'] } };
+  }
+}
+
+/**
  * Fetch exactly 1 latest article per active channel for the top grid.
  */
 export async function fetchTopGridNews(
