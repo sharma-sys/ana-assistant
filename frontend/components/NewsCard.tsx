@@ -36,11 +36,33 @@ export default function NewsCard({ article, onGenerateAI, isGenerating }: NewsCa
 
   return (
     <div className={styles.card}>
-      {article.image_url && (
-        <div className={styles.imageContainer}>
-          <Image src={article.image_url} alt={article.title} className={styles.image} fill unoptimized />
+      <div className={styles.imageContainer}>
+        {article.image_url ? (
+          <Image
+            src={article.image_url}
+            alt={article.title}
+            className={styles.image}
+            fill
+            unoptimized
+            onError={(e) => {
+              const target = e.currentTarget as HTMLImageElement;
+              target.style.display = 'none';
+              const ph = target.parentElement?.querySelector('[data-placeholder]') as HTMLElement;
+              if (ph) ph.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        <div
+          data-placeholder="true"
+          className={styles.imagePlaceholder}
+          style={{ display: article.image_url ? 'none' : 'flex' }}
+        >
+          <span className={styles.placeholderLetter}>
+            {article.source ? article.source.charAt(0).toUpperCase() : 'N'}
+          </span>
+          <span className={styles.placeholderSource}>{article.source}</span>
         </div>
-      )}
+      </div>
       <div className={styles.content}>
         <div className={styles.header}>
           <span className={styles.source}>{article.source}</span>

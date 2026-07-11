@@ -144,44 +144,13 @@ class HindiNewsCollector:
         return district
 
     def extract_image(self, entry) -> str | None:
-        """Extract best image from the RSS entry"""
-        image_url = None
-        # 1. Check media_content
-        if hasattr(entry, "media_content") and len(entry.media_content) > 0:
-            image_url = entry.media_content[0].get("url")
-        # 2. Check links array
-        elif hasattr(entry, "links"):
-            for link in entry.links:
-                if "image" in link.get("type", ""):
-                    image_url = link.get("href")
-                    break
-        # 3. Check regex in description
-        if not image_url and hasattr(entry, "description"):
-            match = re.search(r'img.*?src="([^"]+)"', entry.description)
-            if match:
-                image_url = match.group(1)
-
-        # 4. Fallback: scrape og:image (with small timeout)
+        """Extract best image from the RSS entry, then scrape og:image if needed."""
+        from utils.image_fetcher import extract_image_from_feed_entry, fetch_og_image
+        # Try RSS metadata first (fast, no HTTP request)
+        image_url = extract_image_from_feed_entry(entry)
+        # Fallback: scrape og:image from article page
         if not image_url and hasattr(entry, "link"):
-            try:
-                res = requests.get(
-                    entry.link, timeout=2
-                )  # shortened timeout for faster fail
-                if res.status_code == 200:
-                    soup = BeautifulSoup(res.text, "html.parser")
-                    og_image = soup.find("meta", property="og:image")
-                    if og_image and og_image.get("content"):
-                        image_url = og_image.get("content")
-            except Exception as e:
-                pass
-
-        # 5. Generic fallback
-        if not image_url:
-            keywords = ["news", "india", "politics", "business", "hindi"]
-            image_url = (
-                f"https://source.unsplash.com/800x600/?{random.choice(keywords)}"
-            )
-
+            image_url = fetch_og_image(entry.link, timeout=4)
         return image_url
 
     def _process_entry(self, entry, source_id, source_state, source_category):

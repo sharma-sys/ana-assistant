@@ -77,9 +77,11 @@ class DistrictNewsCollector:
             except:
                 pass
 
-        image_url = None
-        if "media_content" in entry and len(entry.media_content) > 0:
-            image_url = entry.media_content[0].get("url")
+        # Try RSS feed metadata first, then scrape og:image from article page
+        from utils.image_fetcher import extract_image_from_feed_entry, fetch_og_image
+        image_url = extract_image_from_feed_entry(entry)
+        if not image_url and hasattr(entry, "link"):
+            image_url = fetch_og_image(entry.link, timeout=4)
 
         return NewsArticle(
             title=entry.get("title", "No Title"),
