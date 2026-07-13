@@ -124,37 +124,18 @@ def get_top_grid_news(
     db: Session = Depends(get_db)
 ):
     """
-    OPTIMIZED: Single subquery to get latest article per active source.
-    Previously used N+1 queries (52 sources × 1 query = 17s). Now ~0.3s.
+    OPTIMIZED: Single query using Window Functions to get latest article per active source.
+    Avoids fetching large subsets of rows and performs at millisecond speed.
     """
-    # Build base filter query
-    base_query = (
-        db.query(NewsArticle, NewsSource)
-        .join(NewsSource, NewsArticle.source_id == NewsSource.id)
-        .filter(NewsSource.is_active == True)
-    )
+    from sqlalchemy import func
 
-    if state and state != "All":
-        # Include articles for the specific state OR for 'All' (national/sports/international)
-        base_query = base_query.filter(
-            or_(NewsArticle.state == state, NewsArticle.state == "All")
-        )
-    if district and district != "All":
-        base_query = base_query.filter(NewsArticle.district == district)
-    if category and category != "All":
-        base_query = base_query.filter(NewsArticle.category == category)
-    if search:
-        base_query = base_query.filter(NewsArticle.title.ilike(f"%{search}%"))
-
-    # Subquery: latest published_at per source
-    subq = (
-        db.query(
-            NewsArticle.source_id,
-            func.max(NewsArticle.published_at).label("max_pub")
-        )
-        .join(NewsSource, NewsArticle.source_id == NewsSource.id)
-        .filter(NewsSource.is_active == True)
-    )
+    # Subquery: Calculate row number per source ordered by published_at DESC
+    rn = func.row_number().over(
+        partition_by=NewsArticle.source_id,
+        order_by=NewsArticle.published_at.desc()
+    ).label('rn')
+    
+    subq = db.query(NewsArticle.id, rn)
     if state and state != "All":
         subq = subq.filter(or_(NewsArticle.state == state, NewsArticle.state == "All"))
     if district and district != "All":
@@ -163,16 +144,16 @@ def get_top_grid_news(
         subq = subq.filter(NewsArticle.category == category)
     if search:
         subq = subq.filter(NewsArticle.title.ilike(f"%{search}%"))
-    subq = subq.group_by(NewsArticle.source_id).subquery()
+    
+    subq = subq.subquery()
 
-    # Join to get the actual latest article per source (single query)
+    # Join to get the actual latest article per source (rn == 1)
     rows = (
-        base_query
-        .join(
-            subq,
-            (NewsArticle.source_id == subq.c.source_id)
-            & (NewsArticle.published_at == subq.c.max_pub)
-        )
+        db.query(NewsArticle, NewsSource)
+        .join(subq, NewsArticle.id == subq.c.id)
+        .join(NewsSource, NewsArticle.source_id == NewsSource.id)
+        .filter(NewsSource.is_active == True)
+        .filter(subq.c.rn == 1)
         .order_by(NewsArticle.published_at.desc())
         .limit(16)
         .all()
@@ -213,45 +194,46 @@ def get_pramukh_samachar(
     db: Session = Depends(get_db)
 ):
     """
-    OPTIMIZED: Single bulk query fetching top-N articles per source using row_number window
-    emulation via subquery. Avoids N+1 pattern (was 52 queries, ~17s).
+    OPTIMIZED: Safely fetches exactly the top 10 articles per source using ROW_NUMBER.
+    Avoids fetching excessive subsets, memory bloat, and solves the single-source bug.
     """
-    from sqlalchemy import func, text
+    from sqlalchemy import func
 
-    # Build filtered query for all articles across active sources
-    base = (
+    # Subquery: Calculate row number per source ordered by published_at DESC
+    rn = func.row_number().over(
+        partition_by=NewsArticle.source_id,
+        order_by=NewsArticle.published_at.desc()
+    ).label('rn')
+    
+    subq = db.query(NewsArticle.id, rn)
+    if state and state != "All":
+        subq = subq.filter(or_(NewsArticle.state == state, NewsArticle.state == "All"))
+    if district and district != "All":
+        subq = subq.filter(NewsArticle.district == district)
+    if category and category != "All":
+        subq = subq.filter(NewsArticle.category == category)
+    if search:
+        subq = subq.filter(NewsArticle.title.ilike(f"%{search}%"))
+    
+    subq = subq.subquery()
+
+    # Fetch exactly the top 10 rows per active source
+    all_rows = (
         db.query(NewsArticle, NewsSource)
+        .join(subq, NewsArticle.id == subq.c.id)
         .join(NewsSource, NewsArticle.source_id == NewsSource.id)
         .filter(NewsSource.is_active == True)
-    )
-
-    if state and state != "All":
-        base = base.filter(or_(NewsArticle.state == state, NewsArticle.state == "All"))
-    if district and district != "All":
-        base = base.filter(NewsArticle.district == district)
-    if category and category != "All":
-        base = base.filter(NewsArticle.category == category)
-    if search:
-        base = base.filter(NewsArticle.title.ilike(f"%{search}%"))
-
-    # Fetch enough rows (top 10 per source × up to 52 sources = 520 max)
-    # Then group in Python — avoids complex window functions across DB dialects
-    all_rows = (
-        base
-        .order_by(NewsArticle.source_id, NewsArticle.published_at.desc())
-        .limit(520)
+        .filter(subq.c.rn <= 10)
+        .order_by(NewsArticle.source_id, subq.c.rn)
         .all()
     )
 
     grouped: dict = {}
-    source_counts: dict = {}
     for article, source in all_rows:
         sname = source.name
         if sname not in grouped:
             grouped[sname] = []
-            source_counts[sname] = 0
-        if source_counts[sname] >= 10:
-            continue
+            
         grouped[sname].append(
             NewsArticleResponse(
                 id=article.id,
@@ -269,7 +251,6 @@ def get_pramukh_samachar(
                 references=article.references,
             )
         )
-        source_counts[sname] += 1
 
     return grouped
 
