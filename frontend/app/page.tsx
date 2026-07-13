@@ -295,7 +295,7 @@ export default function Dashboard() {
 
         <section className={styles.feedSection}>
           
-          {selectedSource === 'All' && (topGridArticles.length > 0 || isLoadingAll) && (
+          {selectedSource === 'All' && (
             <div className={styles.topSection}>
               <div className={styles.gridContainer}>
                 <div className={styles.feedHeader}>

@@ -4,6 +4,40 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ana-assistant.o
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'ana_secure_dev_key_2026';
 
 /**
+ * Fetch with automatic retry — handles Render.com cold starts (30-60s spin-up).
+ * Retries up to `maxRetries` times on network errors or 5xx responses.
+ */
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit = {},
+  maxRetries = 3,
+  timeoutMs = 30000
+): Promise<Response> {
+  let lastError: Error = new Error('Unknown error');
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timer);
+      // Retry on 5xx server errors (e.g., Render waking up)
+      if (response.status >= 500 && attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 2000 * attempt));
+        continue;
+      }
+      return response;
+    } catch (err) {
+      clearTimeout(timer);
+      lastError = err instanceof Error ? err : new Error(String(err));
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 2000 * attempt));
+      }
+    }
+  }
+  throw lastError;
+}
+
+/**
  * Fetch news articles from the FastAPI backend.
  */
 export async function fetchNews(
@@ -29,7 +63,7 @@ export async function fetchNews(
     const queryString = params.toString();
     const url = `${API_BASE_URL}/news/${queryString ? `?${queryString}` : ''}`;
 
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       headers: {
         'X-API-Key': API_KEY,
       },
@@ -144,7 +178,7 @@ export async function triggerRSSFetch(): Promise<{ status: string, new_articles_
 export async function fetchActiveSources(): Promise<{id: number, name: string}[]> {
   try {
     const url = `${API_BASE_URL}/sources`;
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       headers: {
         'X-API-Key': API_KEY,
       }
@@ -168,7 +202,7 @@ export async function fetchActiveSources(): Promise<{id: number, name: string}[]
 export async function fetchFilters(): Promise<{ states: string[], districts: Record<string, string[]> }> {
   try {
     const url = `${API_BASE_URL}/sources/filters`;
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       headers: { 'X-API-Key': API_KEY },
     });
     if (!response.ok) {
@@ -201,7 +235,9 @@ export async function fetchTopGridNews(
     const queryString = params.toString();
     const url = `${API_BASE_URL}/news/top-grid${queryString ? `?${queryString}` : ''}`;
     
-    const response = await fetch(url);
+    const response = await fetchWithRetry(url, {
+      headers: { 'X-API-Key': API_KEY },
+    }, 3, 45000);
     if (!response.ok) {
       throw new Error(`Failed to fetch top grid news: ${response.statusText}`);
     }
@@ -260,7 +296,9 @@ export async function fetchPramukhSamachar(
     const queryString = params.toString();
     const url = `${API_BASE_URL}/news/pramukh-samachar${queryString ? `?${queryString}` : ''}`;
     
-    const response = await fetch(url);
+    const response = await fetchWithRetry(url, {
+      headers: { 'X-API-Key': API_KEY },
+    }, 3, 45000);
     if (!response.ok) {
       throw new Error(`Failed to fetch pramukh samachar: ${response.statusText}`);
     }

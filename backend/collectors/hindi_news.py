@@ -35,12 +35,13 @@ class HindiNewsCollector:
         self.max_retries = max_retries
         self.timeout_sec = timeout_sec
 
-    def fetch_feed_with_retry(self, url: str) -> str | None:
+    def fetch_feed_with_retry(self, url: str, max_retries: int | None = None) -> str | None:
         """
         Fetches the RSS feed XML using cloudscraper with timeouts and retries.
         """
         attempt = 0
-        while attempt < self.max_retries:
+        effective_retries = max_retries if max_retries is not None else self.max_retries
+        while attempt < effective_retries:
             try:
                 # Add headers to act like a normal browser and avoid blocking
                 headers = {
