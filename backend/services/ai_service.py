@@ -3,18 +3,17 @@ import json
 import logging
 # pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
-# pyrefly: ignore [missing-import]
-from google import genai
+from openai import OpenAI, AsyncOpenAI
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-api_key = os.getenv("GEMINI_API_KEY")
-client = genai.Client(api_key=api_key) if api_key else None
+api_key = os.getenv("NVIDIA_API_KEY")
+client = OpenAI(base_url="https://integrate.api.nvidia.com/v1", api_key=api_key) if api_key else None
+async_client = AsyncOpenAI(base_url="https://integrate.api.nvidia.com/v1", api_key=api_key) if api_key else None
 
-# Use gemini-2.0-flash: 1500 req/day free tier (vs 20/day for gemini-2.5-flash)
-MODEL = "gemini-2.0-flash"
+MODEL = "meta/llama-3.1-70b-instruct"
 
 PROMPT_TEMPLATE = """
 Act as an expert SEO Editor and News Analyst. Read the following news article title and content.
@@ -81,19 +80,19 @@ def generate_seo_content_sync(article_title: str, article_content: str) -> dict:
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            response = client.models.generate_content(
+            response = client.chat.completions.create(
                 model=MODEL,
-                contents=prompt,
-                config={"response_mime_type": "application/json"},
+                messages=[{"role": "user", "content": prompt}]
             )
-            return _parse_response(response.text)
+            return _parse_response(response.choices[0].message.content)
         except Exception as e:
             logger.error(f"Error generating AI content (sync, attempt {attempt + 1}): {e}")
             if _is_quota_error(e):
                 if attempt < max_retries - 1:
                     time.sleep(3 ** attempt)  # 1s, 3s, 9s...
                     continue
-                raise  # Let api/ai.py return HTTP 429
+                logger.warning(f"Rate limit exhausted after {max_retries} attempts, using fallback.")
+                return _fallback(article_title, article_content)
             return _fallback(article_title, article_content)
 
 
@@ -111,17 +110,17 @@ async def generate_seo_content(article_title: str, article_content: str) -> dict
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            response = await client.aio.models.generate_content(
+            response = await async_client.chat.completions.create(
                 model=MODEL,
-                contents=prompt,
-                config={"response_mime_type": "application/json"},
+                messages=[{"role": "user", "content": prompt}]
             )
-            return _parse_response(response.text)
+            return _parse_response(response.choices[0].message.content)
         except Exception as e:
             logger.error(f"Error generating AI content (async, attempt {attempt + 1}): {e}")
             if _is_quota_error(e):
                 if attempt < max_retries - 1:
                     await asyncio.sleep(3 ** attempt)
                     continue
-                raise  # Let api/ai.py return HTTP 429
+                logger.warning(f"Rate limit exhausted after {max_retries} attempts, using fallback.")
+                return _fallback(article_title, article_content)
             return _fallback(article_title, article_content)

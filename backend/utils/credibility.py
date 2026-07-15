@@ -68,11 +68,19 @@ class CredibilityEngine:
         elif score >= 50:
             status = "Moderate"
             
+        has_multiple = False
+        if article.references:
+            try:
+                refs = json.loads(article.references)
+                has_multiple = len(refs) > 0
+            except:
+                pass
+
         return {
             "credibility_score": score,
             "status": status,
             "publisher_type": source.type,
-            "has_multiple_sources": bool(article.references and len(json.loads(article.references)) > 0),
+            "has_multiple_sources": has_multiple,
             "is_government_confirmed": (score >= 90 and (source.type in ["pib_news", "gov_news", "police_news"] or cls._has_gov_refs(article)))
         }
 
