@@ -70,46 +70,58 @@ def _parse_response(text: str) -> dict:
 def generate_seo_content_sync(article_title: str, article_content: str) -> dict:
     """
     Calls Gemini API synchronously to generate SEO metadata and a summary.
-    Raises exception on quota errors so the caller can return HTTP 429.
+    Implements exponential backoff for quota errors.
     """
+    import time
     if not client:
         return _fallback(article_title, article_content)
 
     prompt = PROMPT_TEMPLATE.format(title=article_title, content=article_content)
 
-    try:
-        response = client.models.generate_content(
-            model=MODEL,
-            contents=prompt,
-            config={"response_mime_type": "application/json"},
-        )
-        return _parse_response(response.text)
-    except Exception as e:
-        logger.error(f"Error generating AI content (sync): {e}")
-        if _is_quota_error(e):
-            raise  # Let api/ai.py return HTTP 429
-        return _fallback(article_title, article_content)
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(
+                model=MODEL,
+                contents=prompt,
+                config={"response_mime_type": "application/json"},
+            )
+            return _parse_response(response.text)
+        except Exception as e:
+            logger.error(f"Error generating AI content (sync, attempt {attempt + 1}): {e}")
+            if _is_quota_error(e):
+                if attempt < max_retries - 1:
+                    time.sleep(3 ** attempt)  # 1s, 3s, 9s...
+                    continue
+                raise  # Let api/ai.py return HTTP 429
+            return _fallback(article_title, article_content)
 
 
 async def generate_seo_content(article_title: str, article_content: str) -> dict:
     """
     Calls Gemini API asynchronously to generate SEO metadata and a summary.
-    Raises exception on quota errors so the caller can return HTTP 429.
+    Implements exponential backoff for quota errors.
     """
+    import asyncio
     if not client:
         return _fallback(article_title, article_content)
 
     prompt = PROMPT_TEMPLATE.format(title=article_title, content=article_content)
 
-    try:
-        response = await client.aio.models.generate_content(
-            model=MODEL,
-            contents=prompt,
-            config={"response_mime_type": "application/json"},
-        )
-        return _parse_response(response.text)
-    except Exception as e:
-        logger.error(f"Error generating AI content (async): {e}")
-        if _is_quota_error(e):
-            raise  # Let api/ai.py return HTTP 429
-        return _fallback(article_title, article_content)
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = await client.aio.models.generate_content(
+                model=MODEL,
+                contents=prompt,
+                config={"response_mime_type": "application/json"},
+            )
+            return _parse_response(response.text)
+        except Exception as e:
+            logger.error(f"Error generating AI content (async, attempt {attempt + 1}): {e}")
+            if _is_quota_error(e):
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(3 ** attempt)
+                    continue
+                raise  # Let api/ai.py return HTTP 429
+            return _fallback(article_title, article_content)

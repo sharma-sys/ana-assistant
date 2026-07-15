@@ -121,14 +121,12 @@ class PibNewsCollector:
 
         if articles_to_add:
             for article in articles_to_add:
-                self.db.add(article)
-                new_count += 1
-            try:
-                self.db.commit()
-            except Exception as e:
-                self.db.rollback()
-                logger.error(f"Failed to commit articles for {source.name}: {e}")
-                return 0
+                try:
+                    self.db.add(article)
+                    self.db.commit()
+                    new_count += 1
+                except Exception as e:
+                    self.db.rollback()
 
         return new_count
 

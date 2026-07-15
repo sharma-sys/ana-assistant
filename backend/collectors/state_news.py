@@ -132,20 +132,22 @@ class StateNewsCollector:
 
         if articles_to_add:
             for article in articles_to_add:
-                self.db.add(article)
-                new_count += 1
-            try:
-                self.db.commit()
-            except Exception as e:
-                self.db.rollback()
-                logger.error(f"Failed to commit articles for {source.name}: {e}")
-                return 0
+                try:
+                    self.db.add(article)
+                    self.db.commit()
+                    new_count += 1
+                except Exception as e:
+                    self.db.rollback()
 
         return new_count
 
     def run(self) -> dict:
         logger.info("Starting State News Collector run...")
-        sources_to_process = self.db.query(NewsSource).filter(NewsSource.type == "rss_state", NewsSource.is_active == True).all()
+        from sqlalchemy import or_
+        sources_to_process = self.db.query(NewsSource).filter(
+            or_(NewsSource.type == "rss_state", NewsSource.type == "rss_regional"), 
+            NewsSource.is_active == True
+        ).all()
         total_new_articles = 0
         skipped_sources = 0
 
