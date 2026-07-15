@@ -8,11 +8,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 import requests
 import concurrent.futures
-from collectors.hindi_news import HindiNewsCollector
-from collectors.district_news import DistrictNewsCollector
-from collectors.gov_news import GovernmentNewsCollector
-from collectors.police_news import PoliceNewsCollector
-from collectors.pib_news import PibNewsCollector
+from collectors.unified_news_collector import UnifiedNewsCollector
 from api.auth import verify_api_key
 
 router = APIRouter()
@@ -195,32 +191,22 @@ def retry_source(source_id: int, db: Session = Depends(get_db), api_key: str = D
         raise HTTPException(status_code=404, detail="Source not found")
 
     # We will trigger the appropriate collector just for this source.
-    # Note: In our current architecture, the collectors pull all active sources of their type.
-    # For a pure retry of a single source, we can instantiate the collector and call parse_and_store directly if we fetch the feed.
-
-    type_map = {
-        "rss": HindiNewsCollector,
-        "rss_district": DistrictNewsCollector,
-        "rss_gov": GovernmentNewsCollector,
-        "rss_police": PoliceNewsCollector,
-        "rss_pib": PibNewsCollector,
-    }
-
-    collector_class = type_map.get(source.type)
-    if not collector_class:
-        raise HTTPException(
-            status_code=400, detail=f"No collector implemented for type: {source.type}"
-        )
-
-    collector = collector_class(db)
-    feed_xml = collector.fetch_feed_with_retry(source.url, max_retries=1)
-
-    if not feed_xml:
-        return {"status": "failed", "message": f"Failed to fetch {source.url}."}
-
-    new_articles = collector.parse_and_store(feed_xml, source)
-
-    return {
-        "status": "success",
-        "message": f"Retry complete. Fetched {new_articles} new articles from {source.name}.",
-    }
+    collector = UnifiedNewsCollector(db)
+    
+    try:
+        new_articles = collector.fetch_source(source)
+        if new_articles:
+            db.add_all(new_articles)
+            db.commit()
+            return {
+                "status": "success",
+                "message": f"Retry complete. Fetched {len(new_articles)} new articles from {source.name}.",
+            }
+        else:
+            return {
+                "status": "success",
+                "message": f"Retry complete. No new articles found for {source.name}.",
+            }
+    except Exception as e:
+        db.rollback()
+        return {"status": "failed", "message": f"Failed to fetch {source.url}. Error: {str(e)}"}

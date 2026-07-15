@@ -8,7 +8,6 @@ from database.models import NewsArticle, NewsSource
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
-from collectors.rss import GenericRssCollector
 from utils.credibility import CredibilityEngine
 from api.auth import verify_api_key
 
@@ -259,33 +258,15 @@ def get_pramukh_samachar(
 
 def run_rss_collectors(db: Session):
     try:
-        from collectors.rss import GenericRssCollector
-        from collectors.hindi_news import HindiNewsCollector
-        from collectors.gov_news import GovernmentNewsCollector
-        from collectors.district_news import DistrictNewsCollector
-        from collectors.national_news import NationalNewsCollector
-        from collectors.state_news import StateNewsCollector
-        
-        c1 = GenericRssCollector(db)
-        c1.run()
-        
-        c2 = HindiNewsCollector(db)
-        c2.run()
-        
-        c3 = GovernmentNewsCollector(db)
-        c3.run()
-
-        c4 = DistrictNewsCollector(db)
-        c4.run()
-        
-        c5 = NationalNewsCollector(db)
-        c5.run()
-        
-        c6 = StateNewsCollector(db)
-        c6.run()
+        from collectors.unified_news_collector import UnifiedNewsCollector
+        logger = logging.getLogger(__name__)
+        logger.info("Triggering UnifiedNewsCollector manually.")
+        collector = UnifiedNewsCollector(db)
+        result = collector.run()
+        logger.info(result)
     except Exception as e:
         import logging
-        logging.error(f"Error fetching RSS feeds: {str(e)}", exc_info=True)
+        logging.error(f"Error fetching feeds: {str(e)}", exc_info=True)
 
 
 @router.post("/fetch")
