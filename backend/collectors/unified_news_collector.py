@@ -158,29 +158,7 @@ class UnifiedNewsCollector:
             logger.warning(f"Unknown source type: {source_type} for {source.name}, defaulting to RSS.")
             extracted_data = self.process_rss(source)
 
-        new_articles = []
-        for data in extracted_data:
-            if self.deduplicator.is_duplicate(data['title'], data['url'], data['content']):
-                continue
-                
-            language = "hi" if "hindi" in source_type or "hindi" in source.name.lower() else "en"
-            
-            article = NewsArticle(
-                title=data['title'],
-                source_url=data['url'],
-                source_id=source.id,
-                state=source.state,
-                district=source.district,
-                category=source.category,
-                department=source.department,
-                published_at=data['published_at'],
-                status="pending",
-                image_url=data['image_url'],
-                language=language
-            )
-            new_articles.append(article)
-            
-        return new_articles
+        return extracted_data
 
     def run(self):
         active_sources = self.db.query(NewsSource).filter(NewsSource.is_active == True).all()
@@ -196,7 +174,31 @@ class UnifiedNewsCollector:
             for future in as_completed(future_to_source):
                 source = future_to_source[future]
                 try:
-                    new_articles = future.result()
+                    extracted_data = future.result()
+                    new_articles = []
+                    source_type = source.type.lower()
+                    
+                    for data in extracted_data:
+                        if self.deduplicator.is_duplicate(data['title'], data['url'], data['content']):
+                            continue
+                            
+                        language = "hi" if "hindi" in source_type or "hindi" in source.name.lower() else "en"
+                        
+                        article = NewsArticle(
+                            title=data['title'],
+                            source_url=data['url'],
+                            source_id=source.id,
+                            state=source.state,
+                            district=source.district,
+                            category=source.category,
+                            department=source.department,
+                            published_at=data['published_at'],
+                            status="pending",
+                            image_url=data['image_url'],
+                            language=language
+                        )
+                        new_articles.append(article)
+
                     if new_articles:
                         self.db.add_all(new_articles)
                         self.db.commit() # Commit per source to prevent massive rollbacks

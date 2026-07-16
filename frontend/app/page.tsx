@@ -53,6 +53,8 @@ export default function Dashboard() {
     }
   }, [filtersData]);
 
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
@@ -60,6 +62,8 @@ export default function Dashboard() {
       } catch (error) {
         console.error("Failed to auto-sync RSS feeds", error);
       }
+      // Trigger a UI re-render with new data
+      setRefreshTrigger(prev => prev + 1);
     }, 120000); 
     return () => clearInterval(interval);
   }, []);
@@ -123,7 +127,7 @@ export default function Dashboard() {
 
     fetchAll();
     return () => { cancelled = true; };
-  }, [debouncedSearch, selectedState, selectedCity, selectedCategory, selectedSource]);
+  }, [debouncedSearch, selectedState, selectedCity, selectedCategory, selectedSource, refreshTrigger]);
 
 
   useEffect(() => {
