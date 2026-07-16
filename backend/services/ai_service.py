@@ -20,7 +20,7 @@ else:
     nvidia_client_available = False
     logger.warning("NVIDIA_API_KEY not found. AI generation will use fallback.")
 
-MODEL_NAME = "z-ai/glm-5.2"
+MODEL_NAME = "google/gemini-2.5-flash"
 
 PROMPT_TEMPLATE = """
 Act as an expert SEO Editor and News Analyst. Read the following news article title and content.
@@ -73,12 +73,13 @@ def _parse_response(text: str) -> dict:
         text = text[:-3]
     return json.loads(text.strip())
 
-class NvidiaProvider:
+class OpenRouterProvider:
     def __init__(self):
-        if nvidia_client_available:
+        self.api_key = os.getenv("OPENROUTER_API_KEY") or os.getenv("NVIDIA_API_KEY")
+        if self.api_key:
             self.client = OpenAI(
-                api_key=NVIDIA_API_KEY,
-                base_url="https://integrate.api.nvidia.com/v1"
+                api_key=self.api_key,
+                base_url="https://openrouter.ai/api/v1"
             )
         else:
             self.client = None
@@ -114,7 +115,7 @@ class NvidiaProvider:
 
 class AIService:
     def __init__(self):
-        self.provider = NvidiaProvider()
+        self.provider = OpenRouterProvider()
 
     def generate_seo_content_sync(self, article_title: str, article_content: str) -> dict:
         return self.provider.generate_sync(article_title, article_content)
