@@ -53,16 +53,24 @@ def process_ai_queue():
         )
 
         if ai_data:
+            # Combine tags and keywords for the keywords column
+            raw_keywords = ai_data.get("keywords", [])
+            raw_tags = ai_data.get("tags", [])
+            
+            if isinstance(raw_keywords, str):
+                raw_keywords = [k.strip() for k in raw_keywords.split(",")]
+            if isinstance(raw_tags, str):
+                raw_tags = [t.strip() for t in raw_tags.split(",")]
+                
+            combined_keywords_list = list(set((raw_keywords if isinstance(raw_keywords, list) else []) + (raw_tags if isinstance(raw_tags, list) else [])))
+            combined_keywords = ", ".join(combined_keywords_list)
+
             new_result = AIResult(
                 article_id=article.id,
-                content=ai_data.get("content", ""),
-                seo_title=ai_data.get("seo_title", ""),
+                content=ai_data.get("rewritten_article", ""),
+                seo_title=ai_data.get("title", ""),
                 meta_description=ai_data.get("meta_description", ""),
-                keywords=(
-                    ", ".join(ai_data.get("keywords", []))
-                    if isinstance(ai_data.get("keywords"), list)
-                    else ai_data.get("keywords", "")
-                ),
+                keywords=combined_keywords,
                 slug=ai_data.get("slug", ""),
                 summary=(
                     "\n".join(f"- {point}" for point in ai_data.get("summary", []))

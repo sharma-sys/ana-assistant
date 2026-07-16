@@ -29,13 +29,14 @@ DO NOT just translate or copy the original sentences. DO NOT paraphrase the orig
 You must write a fresh, engaging, and professional news report with a unique structure and flow. Keep the language same as the original article (Hindi or English).
 
 Generate a JSON response containing exactly these keys:
-1. "content": The completely NEW and UNIQUE article text based on the facts (at least 3-4 paragraphs). It MUST NOT be similar to the original article in phrasing or structure.
-2. "seo_title": An SEO optimized title (max 60 chars) that is different from original.
+1. "title": An SEO optimized title (max 60 chars) that is different from original.
+2. "summary": A short bullet-point summary of the key facts (2-3 bullet points).
 3. "meta_description": A compelling meta description (max 160 chars).
 4. "keywords": Array of 5-8 relevant keyword strings.
 5. "slug": A URL friendly slug in English based on the new title.
 6. "category": The single most relevant news category (e.g., Politics, Sports, Business, Technology, Crime).
-7. "summary": A short bullet-point summary of the key facts (2-3 bullet points).
+7. "tags": Array of 3-5 relevant tags.
+8. "rewritten_article": The completely NEW and UNIQUE article text based on the facts (at least 3-4 paragraphs). It MUST NOT be similar to the original article in phrasing or structure.
 
 Article Title: {title}
 Article Content: {content}
@@ -48,18 +49,19 @@ def _fallback(article_title: str, article_content: str) -> dict:
 
     clean_title = re.sub(r"[^a-zA-Z0-9\u0900-\u097F]", "-", article_title.lower())
     return {
-        "content": (
+        "rewritten_article": (
             f"**[AI Generation Failed]** Your NVIDIA API key might have exceeded its quota or is invalid. Falling back to original content:\n\n{article_content}"
             if article_content
             else "Content could not be generated at this time. API Error."
         ),
-        "seo_title": article_title[:60],
+        "title": article_title[:60],
         "meta_description": (
             (article_content[:150] + "...") if article_content else article_title
         ),
         "keywords": ["news", "update", "latest"],
         "slug": clean_title[:50],
         "category": "General",
+        "tags": ["news"],
         "summary": ["Generated via fallback."],
     }
 
