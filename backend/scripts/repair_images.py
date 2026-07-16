@@ -37,42 +37,53 @@ def repair_article(article_id, url):
 
 def main():
     db = SessionLocal()
-    # Find all articles with no image
-    articles = db.query(NewsArticle).filter(NewsArticle.image_url == None).all()
+    # Find all articles with no image, yield in chunks to prevent OOM
+    articles = db.query(NewsArticle).filter(NewsArticle.image_url == None).yield_per(100)
     
     if not articles:
         logger.info("No articles found with missing images.")
         return
-        
-    logger.info(f"Found {len(articles)} articles missing images. Starting repair...")
+    logger.info("Found articles missing images. Starting repair...")
     
     success_count = 0
     fail_count = 0
     
-    # Use ThreadPoolExecutor for concurrent requests
+    # Process in batches manually instead of loading everything into memory
     with ThreadPoolExecutor(max_workers=10) as executor:
-        future_to_article = {
-            executor.submit(repair_article, a.id, a.source_url): a for a in articles
-        }
+        batch = []
+        batch_size = 100
         
-        for future in as_completed(future_to_article):
-            a = future_to_article[future]
-            try:
-                article_id, img_url, error = future.result()
-                if img_url:
-                    # Update database
-                    db_article = db.query(NewsArticle).filter(NewsArticle.id == article_id).first()
-                    if db_article:
-                        db_article.image_url = img_url
-                        db.commit()
-                        logger.info(f"Fixed image for article {article_id}: {img_url}")
-                        success_count += 1
-                else:
-                    logger.warning(f"Failed to find image for article {article_id} ({a.source_url}): {error}")
+        def process_batch(current_batch):
+            nonlocal success_count, fail_count
+            future_to_article = {
+                executor.submit(repair_article, a.id, a.source_url): a for a in current_batch
+            }
+            for future in as_completed(future_to_article):
+                a = future_to_article[future]
+                try:
+                    article_id, img_url, error = future.result()
+                    if img_url:
+                        db_article = db.query(NewsArticle).filter(NewsArticle.id == article_id).first()
+                        if db_article:
+                            db_article.image_url = img_url
+                            db.commit()
+                            logger.info(f"Fixed image for article {article_id}: {img_url}")
+                            success_count += 1
+                    else:
+                        logger.warning(f"Failed to find image for article {article_id} ({a.source_url}): {error}")
+                        fail_count += 1
+                except Exception as exc:
+                    logger.error(f"Article {a.id} generated an exception: {exc}")
                     fail_count += 1
-            except Exception as exc:
-                logger.error(f"Article {a.id} generated an exception: {exc}")
-                fail_count += 1
+
+        for article in articles:
+            batch.append(article)
+            if len(batch) >= batch_size:
+                process_batch(batch)
+                batch = []
+                
+        if batch:
+            process_batch(batch)
                 
     logger.info(f"Repair complete. Success: {success_count}, Failed: {fail_count}")
 

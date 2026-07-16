@@ -31,6 +31,8 @@ class UnifiedNewsCollector:
         self.db = db
         self.deduplicator = Deduplicator(db)
         self.scraper = cloudscraper.create_scraper()
+        from services.image_extractor import ImageExtractor
+        self.image_extractor = ImageExtractor()
 
     def _get_og_image(self, url: str) -> str:
         try:
@@ -94,9 +96,7 @@ class UnifiedNewsCollector:
                         image_url = img_tag['src']
                         
                 # Use ImageExtractor to validate the RSS image and potentially find better ones
-                from services.image_extractor import ImageExtractor
-                extractor = ImageExtractor()
-                image_url = extractor.extract_image(link, html_content=None, feed_image_url=image_url)
+                image_url = self.image_extractor.extract_image(link, html_content=None, feed_image_url=image_url)
                 
                 published_at = datetime.utcnow()
                 if 'published_parsed' in entry and entry.published_parsed:
@@ -130,9 +130,7 @@ class UnifiedNewsCollector:
                 pub_date = datetime.utcnow() # simplified
                 
                 feed_image_url = item.get('image', item.get('urlToImage'))
-                from services.image_extractor import ImageExtractor
-                extractor = ImageExtractor()
-                image_url = extractor.extract_image(link, html_content=None, feed_image_url=feed_image_url)
+                image_url = self.image_extractor.extract_image(link, html_content=None, feed_image_url=feed_image_url)
                 
                 articles.append({
                     "title": title,
@@ -164,9 +162,7 @@ class UnifiedNewsCollector:
                 if "category" in link or "tag" in link:
                     continue
                     
-                from services.image_extractor import ImageExtractor
-                extractor = ImageExtractor()
-                image_url = extractor.extract_image(link)
+                image_url = self.image_extractor.extract_image(link)
                     
                 articles.append({
                     "title": title,
