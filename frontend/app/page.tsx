@@ -172,8 +172,40 @@ export default function Dashboard() {
   const handleGenerateAI = async (articleId: string | number) => {
     setGeneratingId(articleId);
     try {
-      const result = await generateAIContent(articleId);
-      setAiResult(result);
+      const initialResponse = await generateAIContent(articleId);
+      
+      // Since backend queues the request, we must poll the result endpoint
+      let isCompleted = false;
+      let pollingAttempts = 0;
+      
+      while (!isCompleted && pollingAttempts < 60) { // Max 2 minutes polling
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Poll every 2 seconds
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'}/rewrite/result/${articleId}`, {
+          headers: {
+            'X-API-Key': process.env.NEXT_PUBLIC_ANA_API_KEY || 'ana_secure_dev_key_2026',
+          }
+        });
+        
+        if (!response.ok) throw new Error("Failed to fetch AI generation result");
+        
+        const data = await response.json();
+        
+        if (data.status === "completed") {
+          setAiResult(data.data);
+          isCompleted = true;
+          setToast({ message: "AI Content generated successfully!", type: 'success' });
+        } else if (data.status === "pending" || data.status === "processing") {
+          pollingAttempts++;
+          // Continue polling
+        } else {
+          throw new Error("AI generation failed or was cancelled.");
+        }
+      }
+      
+      if (!isCompleted) {
+        throw new Error("AI generation timed out. Please try again later.");
+      }
     } catch (error) {
       console.error("Failed to generate AI content", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to generate AI content. Please try again.";

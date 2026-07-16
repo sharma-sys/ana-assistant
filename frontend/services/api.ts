@@ -121,7 +121,7 @@ export async function fetchNews(
  */
 export async function generateAIContent(articleId: string | number): Promise<AIResult> {
   try {
-    const url = `${API_BASE_URL}/ai/generate`;
+    const url = `${API_BASE_URL}/rewrite/generate`;
     
     const response = await fetch(url, {
       method: 'POST',

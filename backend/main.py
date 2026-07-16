@@ -101,7 +101,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 app.include_router(news.router, prefix="/api/news", tags=["News"])
-app.include_router(ai.router, prefix="/api/ai", tags=["AI"])
+app.include_router(ai.router, prefix="/api/rewrite", tags=["AI"])
 app.include_router(sources.router, prefix="/api/sources", tags=["Sources"])
 
 
