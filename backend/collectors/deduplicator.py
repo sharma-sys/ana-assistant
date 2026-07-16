@@ -76,18 +76,16 @@ class Deduplicator:
             self.seen_hashes.add(content_hash)
 
         # --- Level 4: Similarity Check against recent articles ---
-        if nlp and content:
-            # We fetch a few very recent articles to check similarity and avoid N+1 issues
-            recent_articles = self.db.query(NewsArticle).order_by(NewsArticle.published_at.desc()).limit(10).all()
-            for article in recent_articles:
-                # We can't compare full DB content since NewsArticle doesn't store full content directly?
-                # Oh wait, models.py doesn't have a full `content` column in NewsArticle, only in AIResult.
-                # However, it might be stored somewhere else or just title. Let's compare titles.
-                if article.title:
-                    sim = self._calculate_similarity(clean_title, article.title.lower())
-                    if sim > 0.85:
-                        self.seen_urls.add(link)
-                        return True
+        # Disabled: en_core_web_sm does not have word vectors and produces 
+        # >0.85 similarity for almost all Hindi text, causing false duplicates.
+        # if nlp and content:
+        #     recent_articles = self.db.query(NewsArticle).order_by(NewsArticle.published_at.desc()).limit(10).all()
+        #     for article in recent_articles:
+        #         if article.title:
+        #             sim = self._calculate_similarity(clean_title, article.title.lower())
+        #             if sim > 0.85:
+        #                 self.seen_urls.add(link)
+        #                 return True
 
         # Cache valid lookups
         self.seen_urls.add(link)
