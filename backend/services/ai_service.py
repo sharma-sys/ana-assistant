@@ -98,7 +98,7 @@ class OpenRouterProvider:
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.7,
                     top_p=1,
-                    max_tokens=16384,
+                    max_tokens=2048,
                     stream=False
                 )
                 return _parse_response(response.choices[0].message.content)
