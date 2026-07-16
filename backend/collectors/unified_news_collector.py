@@ -32,6 +32,19 @@ class UnifiedNewsCollector:
         self.deduplicator = Deduplicator(db)
         self.scraper = cloudscraper.create_scraper()
 
+    def _get_og_image(self, url: str) -> str:
+        try:
+            resp = self.scraper.get(url, timeout=REQUEST_TIMEOUT)
+            if resp.status_code == 200:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(resp.content, 'html.parser')
+                og_img = soup.find('meta', property='og:image')
+                if og_img and og_img.get('content'):
+                    return og_img['content']
+        except Exception as e:
+            logger.warning(f"Failed to fetch og:image for {url}: {e}")
+        return None
+
     def fetch_with_backoff(self, url: str) -> requests.Response:
         """Fetch URL with exponential backoff and timeout protection."""
         _enforce_rate_limit(url)
@@ -79,6 +92,10 @@ class UnifiedNewsCollector:
                     img_tag = soup.find('img')
                     if img_tag and img_tag.get('src'):
                         image_url = img_tag['src']
+                        
+                # Ultimate fallback: fetch the article HTML and get og:image
+                if not image_url and link:
+                    image_url = self._get_og_image(link)
                 
                 published_at = datetime.utcnow()
                 if 'published_parsed' in entry and entry.published_parsed:
