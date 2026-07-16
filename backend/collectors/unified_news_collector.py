@@ -85,7 +85,7 @@ class UnifiedNewsCollector:
                         if 'image' in l.get('type', ''):
                             image_url = l.get('href')
                 
-                # Fallback to checking the description for an <img> tag
+                # Fallback to checking the description for an <img> tag if no RSS media image
                 if not image_url and entry.get('description'):
                     from bs4 import BeautifulSoup
                     soup = BeautifulSoup(entry.description, 'html.parser')
@@ -93,9 +93,10 @@ class UnifiedNewsCollector:
                     if img_tag and img_tag.get('src'):
                         image_url = img_tag['src']
                         
-                # Ultimate fallback: fetch the article HTML and get og:image
-                if not image_url and link:
-                    image_url = self._get_og_image(link)
+                # Use ImageExtractor to validate the RSS image and potentially find better ones
+                from services.image_extractor import ImageExtractor
+                extractor = ImageExtractor()
+                image_url = extractor.extract_image(link, html_content=None, feed_image_url=image_url)
                 
                 published_at = datetime.utcnow()
                 if 'published_parsed' in entry and entry.published_parsed:
@@ -128,10 +129,15 @@ class UnifiedNewsCollector:
                 
                 pub_date = datetime.utcnow() # simplified
                 
+                feed_image_url = item.get('image', item.get('urlToImage'))
+                from services.image_extractor import ImageExtractor
+                extractor = ImageExtractor()
+                image_url = extractor.extract_image(link, html_content=None, feed_image_url=feed_image_url)
+                
                 articles.append({
                     "title": title,
                     "url": link,
-                    "image_url": item.get('image', item.get('urlToImage')),
+                    "image_url": image_url,
                     "published_at": pub_date,
                     "content": item.get('description', item.get('content', ''))
                 })
@@ -158,10 +164,14 @@ class UnifiedNewsCollector:
                 if "category" in link or "tag" in link:
                     continue
                     
+                from services.image_extractor import ImageExtractor
+                extractor = ImageExtractor()
+                image_url = extractor.extract_image(link)
+                    
                 articles.append({
                     "title": title,
                     "url": link,
-                    "image_url": None,
+                    "image_url": image_url,
                     "published_at": datetime.utcnow(),
                     "content": ""
                 })

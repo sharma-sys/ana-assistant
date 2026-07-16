@@ -52,16 +52,15 @@ export default function NewsCard({ article, onGenerateAI, isGenerating }: NewsCa
             }}
           />
         ) : null}
-        <div
-          data-placeholder="true"
-          className={styles.imagePlaceholder}
-          style={{ display: article.image_url ? 'none' : 'flex' }}
-        >
-          <span className={styles.placeholderLetter}>
-            {article.source ? article.source.charAt(0).toUpperCase() : 'N'}
-          </span>
-          <span className={styles.placeholderSource}>{article.source}</span>
-        </div>
+        {!article.image_url && (
+          <Image
+            src="/default-news.png"
+            alt="Breaking News Placeholder"
+            className={styles.image}
+            fill
+            unoptimized
+          />
+        )}
       </div>
       <div className={styles.content}>
         <div className={styles.header}>
