@@ -13,12 +13,16 @@ async function fetchWithRetry(
   maxRetries = 3,
   timeoutMs = 30000
 ): Promise<Response> {
+  const mergedOptions: RequestInit = {
+    cache: 'no-store', // Prevent aggressive Next.js caching
+    ...options,
+  };
   let lastError: Error = new Error('Unknown error');
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const response = await fetch(url, { ...options, signal: controller.signal });
+      const response = await fetch(url, { ...mergedOptions, signal: controller.signal });
       clearTimeout(timer);
       // Retry on 5xx server errors (e.g., Render waking up)
       if (response.status >= 500 && attempt < maxRetries) {
@@ -197,7 +201,6 @@ export async function fetchActiveSources(): Promise<{id: number, name: string}[]
 
 /**
  * Fetch real states and districts from active news sources in the DB.
- * Replaces the static mockData.
  */
 export async function fetchFilters(): Promise<{ states: string[], districts: Record<string, string[]> }> {
   try {

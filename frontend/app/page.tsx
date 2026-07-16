@@ -32,7 +32,7 @@ export default function Dashboard() {
   const [topGridArticles, setTopGridArticles] = useState<NewsArticle[]>([]);
   const [groupedNews, setGroupedNews] = useState<Record<string, NewsArticle[]>>({});
 
-  // Real states & districts from backend (replaces static mockData)
+  // Real states & districts from backend
   const [states, setStates] = useState<string[]>(['All']);
   const [cities, setCities] = useState<Record<string, string[]>>({ All: ['All'] });
 
