@@ -73,11 +73,13 @@ def seed_db():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup event
-    logger.info("Starting up ANA Backend (Scheduler now runs in worker.py)")
+    logger.info("Starting up ANA Backend")
     seed_db()
+    scheduler.start()
     yield
     # Shutdown event
     logger.info("Shutting down ANA Backend")
+    scheduler.shutdown()
 
 
 app = FastAPI(title="ANA Backend", version="1.0.0", lifespan=lifespan)
