@@ -492,3 +492,5 @@ export default function Dashboard() {
     </main>
   );
 }
+
+// force reload for nextjs watcher

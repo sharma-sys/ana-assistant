@@ -330,3 +330,5 @@ export async function fetchPramukhSamachar(
     return {};
   }
 }
+
+// force reload for nextjs watcher
