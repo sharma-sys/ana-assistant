@@ -65,10 +65,20 @@ class UnifiedNewsCollector:
                 image_url = None
                 if 'media_content' in entry and len(entry.media_content) > 0:
                     image_url = entry.media_content[0].get('url')
+                elif 'media_thumbnail' in entry and len(entry.media_thumbnail) > 0:
+                    image_url = entry.media_thumbnail[0].get('url')
                 elif 'links' in entry:
                     for l in entry.links:
                         if 'image' in l.get('type', ''):
                             image_url = l.get('href')
+                
+                # Fallback to checking the description for an <img> tag
+                if not image_url and entry.get('description'):
+                    from bs4 import BeautifulSoup
+                    soup = BeautifulSoup(entry.description, 'html.parser')
+                    img_tag = soup.find('img')
+                    if img_tag and img_tag.get('src'):
+                        image_url = img_tag['src']
                 
                 published_at = datetime.utcnow()
                 if 'published_parsed' in entry and entry.published_parsed:
