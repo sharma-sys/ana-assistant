@@ -23,23 +23,18 @@ export default function NewsListCard({ article, onGenerateAI, isGenerating }: Ne
   return (
     <div className={styles.card}>
       <div className={styles.imageContainer}>
-        {article.image_url ? (
-          <Image 
-            src={article.image_url} 
-            alt={article.title} 
-            className={styles.image}
-            fill
-            unoptimized
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-            }}
-          />
-        ) : (
-          <div className={styles.imagePlaceholder} style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#64748b', fontSize: '24px', fontWeight: 'bold' }}>
-            {article.source ? article.source.charAt(0).toUpperCase() : 'N'}
-          </div>
-        )}
+        <Image 
+          src={article.image_url || '/default-news.png'} 
+          alt={article.title} 
+          className={styles.image}
+          fill
+          unoptimized
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = '/default-news.png';
+            target.srcset = '';
+          }}
+        />
       </div>
       
       <div className={styles.content}>
