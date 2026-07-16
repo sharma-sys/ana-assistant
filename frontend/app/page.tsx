@@ -399,7 +399,7 @@ export default function Dashboard() {
                   marginTop: 0, 
                   flexShrink: 0, 
                   backgroundColor: '#6366F1', 
-                  padding: '10px', 
+                  padding: '5px', 
                   borderRadius: '6px' 
                 }}>
                   <h2 style={{ fontSize: '1.25rem', margin: 0, color: '#FFFFFF', textAlign: 'center' }}>Top News</h2>
