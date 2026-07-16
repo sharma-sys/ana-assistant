@@ -10,7 +10,7 @@ import time
 logger = logging.getLogger(__name__)
 
 # Basic keywords for images we want to skip
-IGNORE_KEYWORDS = ['logo', 'icon', 'avatar', 'placeholder', 'blank', 'transparent', 'pixel', 'tracker', 'spinner']
+IGNORE_KEYWORDS = ['googleusercontent.com', 'gstatic.com', 'logo', 'icon', 'avatar', 'placeholder', 'blank', 'transparent', 'pixel', 'tracker', 'spinner']
 
 class ImageExtractor:
     def __init__(self, timeout=10, max_workers=5):
