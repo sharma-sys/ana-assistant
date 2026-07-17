@@ -28,30 +28,19 @@ export default function Dashboard() {
   const [aiResult, setAiResult] = useState<AIResult | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
-  const [activeChannels, setActiveChannels] = useState<{id: number, name: string}[]>([]);
   const [topGridArticles, setTopGridArticles] = useState<NewsArticle[]>([]);
   const [groupedNews, setGroupedNews] = useState<Record<string, NewsArticle[]>>({});
-
-  // Real states & districts from backend
-  const [states, setStates] = useState<string[]>(['All']);
-  const [cities, setCities] = useState<Record<string, string[]>>({ All: ['All'] });
-
+  
   const categories = ['All', 'National', 'Regional', 'International', 'Sports', 'General'];
-
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isHoveredRef = useRef(false);
 
   const { data: activeChannelsData } = useSWR('activeSources', fetchActiveSources);
-  useEffect(() => { if (activeChannelsData) setActiveChannels(activeChannelsData); }, [activeChannelsData]);
+  const activeChannels = activeChannelsData || [];
 
-  // Fetch real states & districts from backend on mount
   const { data: filtersData } = useSWR('sourceFilters', fetchFilters);
-  useEffect(() => {
-    if (filtersData) {
-      setStates(filtersData.states);
-      setCities(filtersData.districts);
-    }
-  }, [filtersData]);
+  const states = filtersData?.states || ['All'];
+  const cities = filtersData?.districts || { All: ['All'] };
 
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -79,13 +68,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     let cancelled = false;
-    setIsLoadingAll(true);
-    // Clear old data immediately so all sections go into loading state together
-    setArticles([]);
-    setTopGridArticles([]);
-    setGroupedNews({});
-
+    
     const fetchAll = async () => {
+      setIsLoadingAll(true);
+      // Clear old data immediately so all sections go into loading state together
+      setArticles([]);
+      setTopGridArticles([]);
+      setGroupedNews({});
+
       try {
         // Use selectedCity for district filtering (district_news collector populates this field)
         const effectiveCity = selectedCity;
@@ -172,7 +162,7 @@ export default function Dashboard() {
   const handleGenerateAI = async (articleId: string | number) => {
     setGeneratingId(articleId);
     try {
-      const initialResponse = await generateAIContent(articleId);
+      await generateAIContent(articleId);
       
       // Since backend queues the request, we must poll the result endpoint
       let isCompleted = false;
