@@ -6,6 +6,7 @@ import asyncio
 import time
 from dotenv import load_dotenv
 
+# pyrefly: ignore [missing-import]
 from openai import OpenAI
 
 load_dotenv(override=True)
@@ -118,7 +119,7 @@ class OpenRouterProvider:
 class GeminiProvider:
     def __init__(self):
         self.api_key = os.getenv("GEMINI_API_KEY")
-        self.url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.api_key}"
+        self.url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={self.api_key}"
 
     def generate_sync(self, article_title: str, article_content: str) -> dict:
         if not self.api_key:
