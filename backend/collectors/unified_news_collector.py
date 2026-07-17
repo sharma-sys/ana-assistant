@@ -22,7 +22,7 @@ from services.scraper_service import _enforce_rate_limit
 logger = logging.getLogger(__name__)
 
 # Config
-MAX_WORKERS = int(os.getenv("MAX_WORKERS", "10"))
+MAX_WORKERS = int(os.getenv("MAX_WORKERS", "3"))
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "15"))
 RETRY_LIMIT = int(os.getenv("RETRY_LIMIT", "3"))
 
