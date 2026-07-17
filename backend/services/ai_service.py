@@ -166,7 +166,15 @@ class AIService:
             self.provider = OpenRouterProvider()
 
     def generate_seo_content_sync(self, article_title: str, article_content: str) -> dict:
-        return self.provider.generate_sync(article_title, article_content)
+        if os.getenv("GEMINI_API_KEY"):
+            result = self.provider.generate_sync(article_title, article_content)
+            # If Gemini fails and returns fallback, try OpenRouter if available
+            if "**[AI Generation Failed]**" in result.get("rewritten_article", "") and os.getenv("OPENROUTER_API_KEY"):
+                fallback_provider = OpenRouterProvider()
+                result = fallback_provider.generate_sync(article_title, article_content)
+            return result
+        else:
+            return self.provider.generate_sync(article_title, article_content)
 
     async def generate_seo_content(self, article_title: str, article_content: str) -> dict:
         return await asyncio.to_thread(self.generate_seo_content_sync, article_title, article_content)
