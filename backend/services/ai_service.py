@@ -26,8 +26,9 @@ MODEL_NAME = "google/gemini-2.5-flash"
 PROMPT_TEMPLATE = """
 Act as an expert SEO Editor and News Analyst. Read the following news article title and content.
 Your task is to EXTRACT facts from the original article and GENERATE COMPLETELY NEW AND UNIQUE CONTENT based on those facts. 
-DO NOT just translate or copy the original sentences. DO NOT paraphrase the original content line-by-line. 
-You must write a fresh, engaging, and professional news report with a unique structure and flow. Keep the language same as the original article (Hindi or English).
+CRITICAL RULE: DO NOT just translate, copy, or slightly paraphrase the original sentences. 
+You must write a completely fresh, engaging, and professional news report with a unique structure and flow. 
+Keep the language same as the original article (Hindi or English).
 
 Generate a JSON response containing exactly these keys:
 1. "title": An SEO optimized title (max 60 chars) that is different from original.
@@ -35,14 +36,12 @@ Generate a JSON response containing exactly these keys:
 3. "meta_description": A compelling meta description (max 160 chars).
 4. "keywords": Array of 5-8 relevant keyword strings.
 5. "slug": A URL friendly slug in English based on the new title.
-6. "category": The single most relevant news category (e.g., Politics, Sports, Business, Technology, Crime).
+6. "category": The single most relevant news category.
 7. "tags": Array of 3-5 relevant tags.
-8. "rewritten_article": The completely NEW and UNIQUE article text based on the facts (at least 3-4 paragraphs). It MUST NOT be similar to the original article in phrasing or structure.
+8. "rewritten_article": The completely NEW and UNIQUE article text based on the facts (at least 3-4 paragraphs). It MUST NOT be similar to the original article.
 
 Article Title: {title}
 Article Content: {content}
-
-Return ONLY valid JSON. Do not include markdown formatting or backticks.
 """
 
 def _fallback(article_title: str, article_content: str) -> dict:
@@ -51,7 +50,7 @@ def _fallback(article_title: str, article_content: str) -> dict:
     clean_title = re.sub(r"[^a-zA-Z0-9\u0900-\u097F]", "-", article_title.lower())
     return {
         "rewritten_article": (
-            f"**[AI Generation Failed]** Your NVIDIA API key might have exceeded its quota or is invalid. Falling back to original content:\n\n{article_content}"
+            f"**[AI Generation Failed]** Content could not be generated cleanly. Falling back to original content:\n\n{article_content}"
             if article_content
             else "Content could not be generated at this time. API Error."
         ),
@@ -132,6 +131,7 @@ class GeminiProvider:
             "generationConfig": {
                 "temperature": 0.7,
                 "maxOutputTokens": 2048,
+                "response_mime_type": "application/json",
             }
         }
         
