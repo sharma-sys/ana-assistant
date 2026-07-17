@@ -115,9 +115,54 @@ class OpenRouterProvider:
         
         return _fallback(article_title, article_content)
 
+class GeminiProvider:
+    def __init__(self):
+        self.api_key = os.getenv("GEMINI_API_KEY")
+        self.url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.api_key}"
+
+    def generate_sync(self, article_title: str, article_content: str) -> dict:
+        if not self.api_key:
+            return _fallback(article_title, article_content)
+
+        prompt = PROMPT_TEMPLATE.format(title=article_title, content=article_content)
+        
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "temperature": 0.7,
+                "maxOutputTokens": 2048,
+            }
+        }
+        
+        import requests
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = requests.post(self.url, json=payload)
+                if response.status_code == 200:
+                    data = response.json()
+                    text = data["candidates"][0]["content"]["parts"][0]["text"]
+                    return _parse_response(text)
+                else:
+                    logger.error(f"Gemini API error (attempt {attempt + 1}): {response.text}")
+                    if response.status_code in [429, 500, 503] and attempt < max_retries - 1:
+                        time.sleep(2**attempt)
+                        continue
+                    return _fallback(article_title, article_content)
+            except Exception as e:
+                logger.error(f"Gemini API exception (attempt {attempt + 1}): {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(2**attempt)
+                    continue
+                return _fallback(article_title, article_content)
+        return _fallback(article_title, article_content)
+
 class AIService:
     def __init__(self):
-        self.provider = OpenRouterProvider()
+        if os.getenv("GEMINI_API_KEY"):
+            self.provider = GeminiProvider()
+        else:
+            self.provider = OpenRouterProvider()
 
     def generate_seo_content_sync(self, article_title: str, article_content: str) -> dict:
         return self.provider.generate_sync(article_title, article_content)
