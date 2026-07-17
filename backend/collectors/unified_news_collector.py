@@ -98,9 +98,10 @@ class UnifiedNewsCollector:
                 # Use ImageExtractor to validate the RSS image and potentially find better ones
                 image_url = self.image_extractor.extract_image(link, html_content=None, feed_image_url=image_url)
                 
+                import calendar
                 published_at = datetime.utcnow()
                 if 'published_parsed' in entry and entry.published_parsed:
-                    published_at = datetime.fromtimestamp(time.mktime(entry.published_parsed))
+                    published_at = datetime.utcfromtimestamp(calendar.timegm(entry.published_parsed))
 
                 articles.append({
                     "title": title,
