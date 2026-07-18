@@ -7,6 +7,7 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 
 from database.session import SessionLocal
+# pyrefly: ignore [missing-import]
 from collectors.district_news import DistrictNewsCollector
 
 def main():

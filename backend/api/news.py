@@ -256,32 +256,20 @@ def get_pramukh_samachar(
 
 
 
-def run_rss_collectors():
-    from database.session import SessionLocal
-    db = SessionLocal()
-    try:
-        from collectors.unified_news_collector import UnifiedNewsCollector
-        logger = logging.getLogger(__name__)
-        logger.info("Triggering UnifiedNewsCollector manually.")
-        collector = UnifiedNewsCollector(db)
-        result = collector.run()
-        logger.info(result)
-    except Exception as e:
-        import logging
-        logging.error(f"Error fetching feeds: {str(e)}", exc_info=True)
-    finally:
-        db.close()
-
-
 @router.post("/fetch")
 def trigger_rss_fetch(
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db), 
     api_key: str = Depends(verify_api_key)
 ):
     try:
-        background_tasks.add_task(run_rss_collectors)
-        return {"status": "success", "new_articles_count": "all"}
+        from collectors.unified_news_collector import UnifiedNewsCollector
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info("Triggering UnifiedNewsCollector manually (synchronous).")
+        collector = UnifiedNewsCollector(db)
+        result = collector.run()
+        logger.info(result)
+        return {"status": "success", "message": result}
     except Exception as e:
         import logging
         logging.error(f"Error fetching RSS feeds: {str(e)}", exc_info=True)
