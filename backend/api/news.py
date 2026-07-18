@@ -256,7 +256,9 @@ def get_pramukh_samachar(
 
 
 
-def run_rss_collectors(db: Session):
+def run_rss_collectors():
+    from database.session import SessionLocal
+    db = SessionLocal()
     try:
         from collectors.unified_news_collector import UnifiedNewsCollector
         logger = logging.getLogger(__name__)
@@ -267,6 +269,8 @@ def run_rss_collectors(db: Session):
     except Exception as e:
         import logging
         logging.error(f"Error fetching feeds: {str(e)}", exc_info=True)
+    finally:
+        db.close()
 
 
 @router.post("/fetch")
@@ -276,7 +280,7 @@ def trigger_rss_fetch(
     api_key: str = Depends(verify_api_key)
 ):
     try:
-        background_tasks.add_task(run_rss_collectors, db)
+        background_tasks.add_task(run_rss_collectors)
         return {"status": "success", "new_articles_count": "all"}
     except Exception as e:
         import logging

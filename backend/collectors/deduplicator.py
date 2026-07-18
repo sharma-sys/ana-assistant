@@ -1,4 +1,5 @@
 import hashlib
+# pyrefly: ignore [missing-import]
 import spacy
 import logging
 from sqlalchemy.orm import Session
@@ -57,7 +58,7 @@ class Deduplicator:
             if clean_title in self.seen_titles:
                 self.seen_urls.add(link)
                 return True
-            exists_title = self.db.query(NewsArticle).filter(NewsArticle.title.ilike(f"%{clean_title}%")).first()
+            exists_title = self.db.query(NewsArticle).filter(NewsArticle.title.ilike(clean_title)).first()
             if exists_title:
                 self.seen_titles.add(clean_title)
                 self.seen_urls.add(link)
